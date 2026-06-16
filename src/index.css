@@ -1,0 +1,394 @@
+@import "tailwindcss";
+
+/* ==================================================================
+   LifeOS design tokens — ported from the LifeOS design (ds.css).
+
+   Layer 1: raw CSS variables on :root. These are real CSS variables,
+   so they can be overridden at runtime (the future Tweaks panel) and
+   everything that references them updates live.
+   ================================================================== */
+:root {
+  /* Surfaces — near-black, faintly cool */
+  --bg: #0a0b0d;
+  --surface-1: #101216;
+  --surface-2: #15181d;
+  --surface-3: #1c2027;
+  --surface-4: #242932;
+  --inset: #0c0e11;
+
+  /* Hairline borders */
+  --line: rgba(255, 255, 255, 0.065);
+  --line-2: rgba(255, 255, 255, 0.11);
+  --line-3: rgba(255, 255, 255, 0.18);
+
+  /* Text */
+  --tx: #eceef0;
+  --tx-2: #a6abb3;
+  --tx-3: #6b717a;
+  --tx-4: #474c54;
+
+  /* Accent — the single "signal" color (chartreuse). Exposed to shadcn
+     as `primary` below, so use bg-primary / text-primary in components. */
+  --acc: #c5f23f;
+  --acc-2: #d4fa66;
+  --acc-ink: #11160a; /* text/icon color that sits on top of the accent */
+  --acc-soft: rgba(197, 242, 63, 0.13);
+  --acc-line: rgba(197, 242, 63, 0.35);
+  --acc-glow: rgba(197, 242, 63, 0.22);
+
+  /* Life-area hues */
+  --career: #4f8cff;
+  --health: #2dd4a7;
+  --mind: #a884ff;
+  --finance: #c5f23f;
+  --relationships: #ff6b81;
+  --creative: #ff9d4d;
+
+  /* Semantic */
+  --danger: #ff5d62;
+  --warn: #ffb547;
+  --ok: #2dd4a7;
+
+  /* Radii (from ds.css) */
+  --r-xs: 6px;
+  --r-sm: 9px;
+  --r-md: 13px;
+  --r-lg: 18px;
+  --r-xl: 24px;
+
+  /* Spacing/density */
+  --d: 1;
+  --gap: calc(20px * var(--d));
+
+  /* Shadows */
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-2: 0 8px 30px rgba(0, 0, 0, 0.45);
+  --shadow-pop: 0 24px 70px rgba(0, 0, 0, 0.6);
+}
+
+/* ==================================================================
+   Layer 2: expose the raw variables to Tailwind as theme tokens.
+   `@theme inline` makes Tailwind emit utilities that reference our
+   var(--x) directly, so runtime changes on :root flow through.
+   This is what turns on `bg-surface-1`, `text-tx`, `border-line`,
+   `text-career`, etc.
+   ================================================================== */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-surface-4: var(--surface-4);
+  --color-inset: var(--inset);
+
+  --color-line: var(--line);
+  --color-line-2: var(--line-2);
+  --color-line-3: var(--line-3);
+
+  --color-tx: var(--tx);
+  --color-tx-2: var(--tx-2);
+  --color-tx-3: var(--tx-3);
+  --color-tx-4: var(--tx-4);
+
+  --color-career: var(--career);
+  --color-health: var(--health);
+  --color-mind: var(--mind);
+  --color-finance: var(--finance);
+  --color-relationships: var(--relationships);
+  --color-creative: var(--creative);
+
+  --color-danger: var(--danger);
+  --color-warn: var(--warn);
+  --color-ok: var(--ok);
+
+  --color-acc-soft: var(--acc-soft);
+  --color-acc-line: var(--acc-line);
+  --color-acc-glow: var(--acc-glow);
+
+  --radius-r-xs: var(--r-xs);
+  --radius-r-sm: var(--r-sm);
+  --radius-r-md: var(--r-md);
+  --radius-r-lg: var(--r-lg);
+  --radius-r-xl: var(--r-xl);
+}
+
+/* ==================================================================
+   Typography tokens. Turns on `font-sans` / `font-mono` utilities.
+   "...Variable" is the family name @fontsource-variable registers.
+   ================================================================== */
+@theme {
+  --font-sans: "Hanken Grotesk Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, "SF Mono", monospace;
+}
+
+/* ==================================================================
+   shadcn/ui token bridge.
+   shadcn components reference semantic tokens (primary, background,
+   border, ring…). We point each at the LifeOS palette above, so the
+   components inherit our design. Key choice: our chartreuse = `primary`.
+   Note: shadcn's "accent" is a subtle hover surface, NOT a brand color.
+   ================================================================== */
+:root {
+  --radius: 0.625rem;
+
+  --background: var(--bg);
+  --foreground: var(--tx);
+  --card: var(--surface-1);
+  --card-foreground: var(--tx);
+  --popover: var(--surface-2);
+  --popover-foreground: var(--tx);
+  --primary: var(--acc);
+  --primary-foreground: var(--acc-ink);
+  --secondary: var(--surface-3);
+  --secondary-foreground: var(--tx);
+  --muted: var(--surface-2);
+  --muted-foreground: var(--tx-3);
+  --accent: var(--surface-3);
+  --accent-foreground: var(--tx);
+  --destructive: var(--danger);
+  --border: var(--line-2);
+  --input: var(--line-2);
+  --ring: var(--acc);
+}
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+}
+
+/* ==================================================================
+   Base page styling.
+   ================================================================== */
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+  body {
+    background-color: var(--bg);
+    color: var(--tx);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+}
+
+/* ==================================================================
+   LifeOS component primitives — ported verbatim from the design's
+   ds.css so screens match the prototype exactly. In @layer components
+   so Tailwind utilities still win when combined on the same element.
+   ================================================================== */
+@layer components {
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--tx-3);
+    font-weight: 500;
+  }
+  .h-display {
+    font-family: var(--font-sans);
+    font-weight: 650;
+    letter-spacing: -0.02em;
+  }
+
+  /* Cards */
+  .card {
+    background: var(--surface-1);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    position: relative;
+  }
+  .card.raised {
+    background: var(--surface-2);
+  }
+  .card-pad {
+    padding: calc(18px * var(--d));
+  }
+  .card-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .card-title {
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: -0.01em;
+  }
+
+  /* Buttons */
+  .ds-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    border-radius: var(--r-sm);
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    border: 1px solid var(--line-2);
+    background: var(--surface-3);
+    color: var(--tx);
+    cursor: pointer;
+    font-family: var(--font-sans);
+    white-space: nowrap;
+    transition:
+      transform 0.08s,
+      background 0.14s,
+      border-color 0.14s,
+      box-shadow 0.14s;
+  }
+  .ds-btn:hover {
+    background: var(--surface-4);
+  }
+  .ds-btn:active {
+    transform: translateY(1px);
+  }
+  .ds-btn.acc {
+    background: var(--acc);
+    border-color: transparent;
+    color: var(--acc-ink);
+    box-shadow: 0 2px 16px var(--acc-glow);
+  }
+  .ds-btn.acc:hover {
+    background: var(--acc-2);
+  }
+  .ds-btn.ghost {
+    background: transparent;
+    border-color: var(--line-2);
+    color: var(--tx-2);
+  }
+  .ds-btn.ghost:hover {
+    color: var(--tx);
+    border-color: var(--line-3);
+    background: var(--surface-2);
+  }
+  .ds-btn.sm {
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+
+  /* Chips */
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.02em;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: var(--surface-3);
+    color: var(--tx-2);
+    border: 1px solid var(--line);
+    white-space: nowrap;
+  }
+  .chip.dot::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  /* Stat cell */
+  .stat-num {
+    font-family: var(--mono);
+    font-size: 26px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+
+  /* Progress bar */
+  .bar {
+    height: 6px;
+    border-radius: 20px;
+    background: var(--surface-3);
+    overflow: hidden;
+  }
+  .bar > i {
+    display: block;
+    height: 100%;
+    border-radius: 20px;
+    background: var(--acc);
+    transition: width 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  /* Task/habit check */
+  .check {
+    width: 18px;
+    height: 18px;
+    border-radius: 6px;
+    border: 1.5px solid var(--line-3);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    flex: 0 0 auto;
+    transition: all 0.14s;
+    color: transparent;
+    background: transparent;
+  }
+  .check:hover {
+    border-color: var(--acc-line);
+  }
+  .check.on {
+    background: var(--acc);
+    border-color: var(--acc);
+    color: var(--acc-ink);
+  }
+
+  /* Sidebar nav badge */
+  .nav-badge {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 10px;
+    background: var(--surface-4);
+    color: var(--tx-2);
+    padding: 1px 6px;
+    border-radius: 20px;
+    min-width: 18px;
+    text-align: center;
+  }
+  .nav-badge.active {
+    background: var(--acc-soft);
+    color: var(--acc);
+  }
+
+  /* Entrance animation */
+  @keyframes rise {
+    from {
+      transform: translateY(9px);
+      opacity: 0.6;
+    }
+    to {
+      transform: none;
+      opacity: 1;
+    }
+  }
+  .rise {
+    animation: rise 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+}
