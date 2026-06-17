@@ -1,89 +1,136 @@
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Plus } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { Stat } from "@/components/ui/Stat";
 import { useListAreasQuery } from "@/features/areas/areasApi";
 
 import { useListHabitsQuery } from "../habitsApi";
 import { HabitCard } from "../components/HabitCard";
 import { NewHabitForm } from "../components/NewHabitForm";
 
+type Filter = "active" | "paused" | "all";
+type Status = { done: boolean; streak: number };
+
 export function HabitsPage() {
   const { data: habits, isLoading, isError } = useListHabitsQuery();
   const { data: areas } = useListAreasQuery();
   const [showForm, setShowForm] = useState(false);
+  const [filter, setFilter] = useState<Filter>("active");
+  const [statuses, setStatuses] = useState<Record<string, Status>>({});
+
+  const onStatus = useCallback((id: string, s: Status) => {
+    setStatuses((prev) =>
+      prev[id]?.done === s.done && prev[id]?.streak === s.streak
+        ? prev
+        : { ...prev, [id]: s },
+    );
+  }, []);
 
   const areaById = new Map((areas ?? []).map((a) => [a.id, a]));
-  const active = (habits ?? []).filter((h) => h.isActive);
-  const inactive = (habits ?? []).filter((h) => !h.isActive);
+  const all = useMemo(() => habits ?? [], [habits]);
+  const active = useMemo(() => all.filter((h) => h.isActive), [all]);
+
+  const list = useMemo(() => {
+    if (filter === "active") return active;
+    if (filter === "paused") return all.filter((h) => !h.isActive);
+    return all;
+  }, [filter, all, active]);
+
+  // B4: prefer server-inline stats; fall back to card-reported once cards load.
+  const hasInlineStats = active.some((h) => h.todayDone != null);
+  const serverDoneToday = active.filter((h) => h.todayDone).length;
+  const serverBestStreak = active.reduce(
+    (max, h) => Math.max(max, h.currentStreak ?? 0),
+    0,
+  );
+  const reported = active.map((h) => statuses[h.id]).filter(Boolean) as Status[];
+  const doneToday = hasInlineStats ? serverDoneToday : reported.filter((s) => s.done).length;
+  const bestStreak = hasInlineStats
+    ? serverBestStreak
+    : reported.length
+      ? Math.max(...reported.map((s) => s.streak))
+      : 0;
+  const completion = active.length
+    ? Math.round((doneToday / active.length) * 100)
+    : 0;
+
+  const stats = [
+    { num: `${doneToday}/${active.length}`, label: "Complete today" },
+    { num: `${bestStreak}d`, label: "Longest streak", color: "var(--acc)" },
+    { num: `${completion}%`, label: "Completion rate" },
+    { num: active.length, label: "Active habits" },
+  ];
 
   return (
-    <div className="mx-auto max-w-5xl p-8">
-      <div className="flex items-end justify-between gap-4">
+    <div className="page rise">
+      <div className="mb-[var(--gap)] flex items-end justify-between gap-4">
         <div>
-          <div className="font-mono text-[10.5px] uppercase tracking-[0.13em] text-tx-3">
-            Execution
+          <div className="eyebrow">Execution</div>
+          <h1 className="page-title">Habits</h1>
+          <div className="page-sub">
+            {active.length} active · {bestStreak}-day best streak
           </div>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">Habits</h1>
-          <p className="mt-1 text-sm text-tx-3">
-            The repeatable actions that compound.
-          </p>
         </div>
-        <Button onClick={() => setShowForm((v) => !v)}>
-          <Plus className="size-4" /> New habit
-        </Button>
+        <button
+          type="button"
+          onClick={() => setShowForm((v) => !v)}
+          className="ds-btn ghost"
+        >
+          <Plus className="size-3.5" /> New habit
+        </button>
+      </div>
+
+      <div className="mb-[var(--gap)] grid grid-cols-2 gap-[var(--gap)] sm:grid-cols-4">
+        {stats.map((x) => (
+          <div key={x.label} className="card card-pad">
+            <Stat num={x.num} label={x.label} color={x.color} />
+          </div>
+        ))}
       </div>
 
       {showForm && (
-        <NewHabitForm areas={areas ?? []} onClose={() => setShowForm(false)} />
+        <div className="mb-[var(--gap)]">
+          <NewHabitForm areas={areas ?? []} onClose={() => setShowForm(false)} />
+        </div>
       )}
 
-      {isLoading && <p className="mt-8 text-sm text-tx-3">Loading habits…</p>}
+      <div className="seg mb-[var(--gap)]">
+        {(["active", "paused", "all"] as Filter[]).map((f) => (
+          <button
+            key={f}
+            className={cn(filter === f && "on")}
+            onClick={() => setFilter(f)}
+          >
+            {f[0].toUpperCase() + f.slice(1)}
+          </button>
+        ))}
+      </div>
+
+      {isLoading && <p className="text-sm text-tx-3">Loading habits…</p>}
       {isError && (
-        <p className="mt-8 text-sm text-danger">
+        <p className="text-sm text-danger">
           Couldn't load your habits. Is the backend running?
         </p>
       )}
 
-      {habits && habits.length === 0 && !showForm && (
-        <div className="mt-10 rounded-xl border border-dashed border-line-2 p-12 text-center">
-          <p className="text-sm text-tx-2">No habits yet.</p>
-          <p className="mt-1 text-sm text-tx-3">
-            Build your first routine to start a streak.
-          </p>
-          <Button className="mt-5" onClick={() => setShowForm(true)}>
-            <Plus className="size-4" /> Create your first habit
-          </Button>
-        </div>
-      )}
+      <div className="grid gap-[var(--gap)] lg:grid-cols-2">
+        {list.map((habit) => (
+          <HabitCard
+            key={habit.id}
+            habit={habit}
+            area={habit.areaId ? areaById.get(habit.areaId) : undefined}
+            onStatus={onStatus}
+          />
+        ))}
+      </div>
 
-      {active.length > 0 && (
-        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {active.map((habit) => (
-            <HabitCard
-              key={habit.id}
-              habit={habit}
-              area={habit.areaId ? areaById.get(habit.areaId) : undefined}
-            />
-          ))}
+      {!isLoading && list.length === 0 && (
+        <div className="card card-pad empty mt-[var(--gap)]">
+          {all.length === 0
+            ? "No habits yet — build your first routine."
+            : "No habits in this filter."}
         </div>
-      )}
-
-      {inactive.length > 0 && (
-        <section className="mt-8">
-          <div className="mb-3 font-mono text-[10.5px] uppercase tracking-[0.13em] text-tx-3">
-            Inactive · {inactive.length}
-          </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {inactive.map((habit) => (
-              <HabitCard
-                key={habit.id}
-                habit={habit}
-                area={habit.areaId ? areaById.get(habit.areaId) : undefined}
-              />
-            ))}
-          </div>
-        </section>
       )}
     </div>
   );

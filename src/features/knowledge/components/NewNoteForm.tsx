@@ -3,15 +3,19 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { ApiError } from "@/lib/api/axiosBaseQuery";
 import { parseApiErrors, type FieldErrorMap } from "@/lib/api/formErrors";
 
 import { useCreateNoteMutation } from "../knowledgeApi";
 import { NOTE_TYPES } from "../constants";
 import type { Notebook, NoteType } from "../types";
-
-const selectClass =
-  "h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm text-tx outline-none focus-visible:border-ring [color-scheme:dark]";
 
 export function NewNoteForm({
   topicId,
@@ -89,37 +93,33 @@ export function NewNoteForm({
 
       <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="note-type">Type</Label>
-          <select
-            id="note-type"
-            value={noteType}
-            onChange={(e) => setNoteType(e.target.value as NoteType)}
-            className={selectClass}
-          >
-            {NOTE_TYPES.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
-              </option>
-            ))}
-          </select>
+          <Label>Type</Label>
+          <Select value={noteType} onValueChange={(v) => setNoteType(v as NoteType)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {NOTE_TYPES.map((t) => (
+                <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {notebooks.length > 0 && (
           <div className="space-y-2">
-            <Label htmlFor="note-notebook">Notebook</Label>
-            <select
-              id="note-notebook"
-              value={notebookId}
-              onChange={(e) => setNotebookId(e.target.value)}
-              className={selectClass}
-            >
-              <option value="">None</option>
-              {notebooks.map((n) => (
-                <option key={n.id} value={n.id}>
-                  {n.title}
-                </option>
-              ))}
-            </select>
+            <Label>Notebook</Label>
+            <Select value={notebookId} onValueChange={setNotebookId}>
+              <SelectTrigger>
+                <SelectValue placeholder="None" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">None</SelectItem>
+                {notebooks.map((n) => (
+                  <SelectItem key={n.id} value={n.id}>{n.title}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         )}
       </div>

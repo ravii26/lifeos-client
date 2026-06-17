@@ -2,6 +2,13 @@ import { useState } from "react";
 import { ChevronDown, Plus, Trash2 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { Area } from "@/features/areas/types";
 import { PRIORITY_BY_VALUE } from "@/features/tasks/constants";
 
@@ -92,23 +99,21 @@ export function GoalCard({ goal, area }: { goal: Goal; area?: Area }) {
       <div className="mt-3 flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5">
           <span className={cn("size-1.5 rounded-full", status.dot)} />
-          <select
+          <Select
             value={goal.status}
-            onChange={(e) =>
-              updateGoal({
-                id: goal.id,
-                data: { status: e.target.value as GoalStatus },
-              })
+            onValueChange={(v) =>
+              updateGoal({ id: goal.id, data: { status: v as GoalStatus } })
             }
-            className="bg-transparent text-xs font-medium text-tx-2 outline-none"
-            title="Change status"
           >
-            {STATUSES.map((s) => (
-              <option key={s.value} value={s.value}>
-                {s.label}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger className="h-auto border-0 bg-transparent px-0 py-0 text-xs font-medium text-tx-2 shadow-none focus:ring-0 [&>svg]:size-3">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {STATUSES.map((s) => (
+                <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <button

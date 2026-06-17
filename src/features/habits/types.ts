@@ -17,9 +17,12 @@ export interface Habit {
   specificDays?: Day[] | null;
   reminderTime?: string | null; // "HH:MM"
   isActive: boolean;
-  // Server-computed stats (display only — may be absent depending on endpoint).
+  // Server-computed stats (B4 — inlined by GET /habits since backend update).
   currentStreak?: number | null;
   longestStreak?: number | null;
+  todayDone?: boolean | null;
+  todayLog?: { completed?: boolean; count?: number; minutes?: number } | null;
+  history?: boolean[] | null; // 28-day completion booleans, oldest first
   createdAt?: string;
   updatedAt?: string;
 }

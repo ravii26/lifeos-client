@@ -3,6 +3,14 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { DateInput } from "@/components/ui/date-input";
 import type { ApiError } from "@/lib/api/axiosBaseQuery";
 import { parseApiErrors, type FieldErrorMap } from "@/lib/api/formErrors";
 import type { Area } from "@/features/areas/types";
@@ -14,10 +22,6 @@ import {
 import { useCreateTaskMutation } from "../tasksApi";
 import { PRIORITIES, RECURRENCES, TASK_TYPES } from "../constants";
 import type { Priority, Recurrence, TaskType } from "../types";
-
-// Shared native-select styling (matches the Input look, dark color-scheme).
-const selectClass =
-  "h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm text-tx outline-none focus-visible:border-ring [color-scheme:dark]";
 
 export function NewTaskForm({
   areas,
@@ -42,7 +46,6 @@ export function NewTaskForm({
   const [formError, setFormError] = useState<string | null>(null);
   const [createTask, { isLoading }] = useCreateTaskMutation();
 
-  // Goals filter by the chosen area; projects filter by the chosen goal.
   const { data: goals } = useListGoalsQuery(
     areaId ? { areaId } : undefined,
   );
@@ -65,7 +68,6 @@ export function NewTaskForm({
         ...(areaId ? { areaId } : {}),
         ...(goalId ? { goalId } : {}),
         ...(projectId ? { projectId } : {}),
-        // Conditional fields — only send what the chosen type expects.
         ...(taskType === "COUNT" && targetCount
           ? { targetCount: Number(targetCount) }
           : {}),
@@ -121,82 +123,66 @@ export function NewTaskForm({
 
       <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="task-area">Area</Label>
-          <select
-            id="task-area"
-            value={areaId}
-            onChange={(e) => {
-              setAreaId(e.target.value);
-              setGoalId(""); // goals are area-scoped — reset on area change
-              setProjectId("");
-            }}
-            className={selectClass}
-          >
-            <option value="">No area</option>
-            {areas.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.name}
-              </option>
-            ))}
-          </select>
+          <Label>Area</Label>
+          <Select value={areaId} onValueChange={(v) => { setAreaId(v); setGoalId(""); setProjectId(""); }}>
+            <SelectTrigger>
+              <SelectValue placeholder="No area" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">No area</SelectItem>
+              {areas.map((a) => (
+                <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="task-priority">Priority</Label>
-          <select
-            id="task-priority"
-            value={priority}
-            onChange={(e) => setPriority(e.target.value as Priority)}
-            className={selectClass}
-          >
-            {PRIORITIES.map((p) => (
-              <option key={p.value} value={p.value}>
-                {p.label}
-              </option>
-            ))}
-          </select>
+          <Label>Priority</Label>
+          <Select value={priority} onValueChange={(v) => setPriority(v as Priority)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {PRIORITIES.map((p) => (
+                <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
-      {/* Goal & project links — area-scoped, optional. */}
       {areaId && (
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="task-goal">Goal</Label>
-            <select
-              id="task-goal"
-              value={goalId}
-              onChange={(e) => {
-                setGoalId(e.target.value);
-                setProjectId(""); // projects are goal-scoped
-              }}
-              className={selectClass}
-            >
-              <option value="">No goal</option>
-              {(goals ?? []).map((g) => (
-                <option key={g.id} value={g.id}>
-                  {g.title}
-                </option>
-              ))}
-            </select>
+            <Label>Goal</Label>
+            <Select value={goalId} onValueChange={(v) => { setGoalId(v); setProjectId(""); }}>
+              <SelectTrigger>
+                <SelectValue placeholder="No goal" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">No goal</SelectItem>
+                {(goals ?? []).map((g) => (
+                  <SelectItem key={g.id} value={g.id}>{g.title}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {goalId && (
             <div className="space-y-2">
-              <Label htmlFor="task-project">Project</Label>
-              <select
-                id="task-project"
-                value={projectId}
-                onChange={(e) => setProjectId(e.target.value)}
-                className={selectClass}
-              >
-                <option value="">No project</option>
-                {(projects ?? []).map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.title}
-                  </option>
-                ))}
-              </select>
+              <Label>Project</Label>
+              <Select value={projectId} onValueChange={setProjectId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="No project" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">No project</SelectItem>
+                  {(projects ?? []).map((p) => (
+                    <SelectItem key={p.id} value={p.id}>{p.title}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           )}
         </div>
@@ -204,22 +190,19 @@ export function NewTaskForm({
 
       <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="task-type">Type</Label>
-          <select
-            id="task-type"
-            value={taskType}
-            onChange={(e) => setTaskType(e.target.value as TaskType)}
-            className={selectClass}
-          >
-            {TASK_TYPES.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label} — {t.hint}
-              </option>
-            ))}
-          </select>
+          <Label>Type</Label>
+          <Select value={taskType} onValueChange={(v) => setTaskType(v as TaskType)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {TASK_TYPES.map((t) => (
+                <SelectItem key={t.value} value={t.value}>{t.label} — {t.hint}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
-        {/* Conditional field: only the chosen type's target shows. */}
         {taskType === "COUNT" && (
           <div className="space-y-2">
             <Label htmlFor="task-target-count">Target count</Label>
@@ -258,12 +241,10 @@ export function NewTaskForm({
 
         <div className="space-y-2">
           <Label htmlFor="task-due">Due date</Label>
-          <Input
+          <DateInput
             id="task-due"
-            type="date"
             value={dueDate}
             onChange={(e) => setDueDate(e.target.value)}
-            className="[color-scheme:dark]"
           />
         </div>
       </div>
@@ -281,19 +262,27 @@ export function NewTaskForm({
 
         {isRecurring && (
           <div className="space-y-2">
-            <Label htmlFor="task-recurrence">Frequency</Label>
-            <select
-              id="task-recurrence"
-              value={recurrence}
-              onChange={(e) => setRecurrence(e.target.value as Recurrence)}
-              className={selectClass}
-            >
-              {RECURRENCES.map((r) => (
-                <option key={r.value} value={r.value}>
-                  {r.label}
-                </option>
-              ))}
-            </select>
+            <Label>Frequency</Label>
+            <Select value={recurrence} onValueChange={(v) => setRecurrence(v as Recurrence)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {RECURRENCES.map((r) => (
+                  <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {recurrence === "WEEKLY" && (
+              <p className="text-[11px] text-tx-3">
+                Repeats once per week. To track specific days (e.g. Mon/Wed/Fri), create a habit instead.
+              </p>
+            )}
+            {(recurrence === "MONTHLY" || recurrence === "YEARLY") && (
+              <p className="text-[11px] text-tx-3">
+                Repeats once per {recurrence === "MONTHLY" ? "month" : "year"} from the due date.
+              </p>
+            )}
           </div>
         )}
       </div>

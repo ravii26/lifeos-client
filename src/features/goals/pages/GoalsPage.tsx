@@ -2,6 +2,13 @@ import { useState } from "react";
 import { Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useListAreasQuery } from "@/features/areas/areasApi";
 
 import { useListGoalsQuery } from "../goalsApi";
@@ -47,18 +54,17 @@ export function GoalsPage() {
       {hasAreas && (areas?.length ?? 0) > 1 && (
         <div className="mt-6 flex items-center gap-2">
           <span className="text-xs text-tx-3">Area</span>
-          <select
-            value={areaFilter}
-            onChange={(e) => setAreaFilter(e.target.value)}
-            className="h-8 rounded-md border border-input bg-transparent px-2.5 text-sm text-tx outline-none focus-visible:border-ring [color-scheme:dark]"
-          >
-            <option value="">All</option>
-            {areas?.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.name}
-              </option>
-            ))}
-          </select>
+          <Select value={areaFilter} onValueChange={setAreaFilter}>
+            <SelectTrigger className="h-8 w-[140px] text-sm">
+              <SelectValue placeholder="All" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All</SelectItem>
+              {areas?.map((a) => (
+                <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       )}
 

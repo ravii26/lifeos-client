@@ -1,66 +1,142 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Plus } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
+import { Donut } from "@/components/charts/Donut";
 import { useLogBehaviorOnMount } from "@/features/behavior/behaviorApi";
+import { useListTasksQuery } from "@/features/tasks/tasksApi";
+import { useListHabitsQuery } from "@/features/habits/habitsApi";
+import { useListGoalsQuery } from "@/features/goals/goalsApi";
 
-import { useListAreasQuery } from "../areasApi";
-import { AreaCard } from "../components/AreaCard";
+import { useListAreasQuery, useSnapshotAreaScoreMutation } from "../areasApi";
+import { AreaCard, type AreaStats } from "../components/AreaCard";
 import { NewAreaForm } from "../components/NewAreaForm";
 
 export function AreasPage() {
   const { data: areas, isLoading, isError } = useListAreasQuery();
+  const { data: tasks } = useListTasksQuery();
+  const { data: habits } = useListHabitsQuery();
+  const { data: goals } = useListGoalsQuery();
   const [showForm, setShowForm] = useState(false);
+  const [snapshotAreaScore] = useSnapshotAreaScoreMutation();
   useLogBehaviorOnMount("AREA_VIEWED");
 
+  // A3: persist a score snapshot once per page visit for each scored area.
+  useEffect(() => {
+    if (!areas) return;
+    for (const a of areas) {
+      if (a.score != null) snapshotAreaScore(a.id);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [areas?.map((a) => a.id).join(",")]);
+
+  const statsByArea = useMemo(() => {
+    const m = new Map<string, AreaStats>();
+    for (const a of areas ?? []) {
+      // A2: prefer server-computed score/tasksDone/tasksTotal when present.
+      const serverScore = a.score != null;
+      const mine = (tasks ?? []).filter((t) => t.areaId === a.id);
+      const done = serverScore ? (a.tasksDone ?? 0) : mine.filter((t) => t.status === "COMPLETED").length;
+      const total = serverScore ? (a.tasksTotal ?? mine.length) : mine.length;
+      m.set(a.id, {
+        score: serverScore ? (a.score ?? 0) : (total ? Math.round((done / total) * 100) : 0),
+        tasksDone: done,
+        tasksTotal: total,
+        habits: (habits ?? []).filter((h) => h.areaId === a.id).length,
+        goals: (goals ?? []).filter((g) => g.areaId === a.id).length,
+        streak: a.streak ?? undefined,
+        focusMins: a.focusMins ?? undefined,
+      });
+    }
+    return m;
+  }, [areas, tasks, habits, goals]);
+
+  const scored = (areas ?? []).map((a) => ({
+    area: a,
+    score: statsByArea.get(a.id)?.score ?? 0,
+  }));
+  const avg = scored.length
+    ? Math.round(scored.reduce((s, x) => s + x.score, 0) / scored.length)
+    : 0;
+  const strongest = [...scored].sort((a, b) => b.score - a.score)[0];
+  const weakest = [...scored].sort((a, b) => a.score - b.score)[0];
+  const balance =
+    avg >= 65 ? "well balanced" : avg >= 50 ? "finding balance" : "out of balance";
+
   return (
-    <div className="mx-auto max-w-5xl p-8">
-      <div className="flex items-end justify-between gap-4">
-        <div>
-          <div className="font-mono text-[10.5px] uppercase tracking-[0.13em] text-tx-3">
-            Insights · balance
-          </div>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">
-            Life Areas
-          </h1>
-          <p className="mt-1 text-sm text-tx-3">
-            The domains everything else hangs off.
-          </p>
+    <div className="page rise">
+      <div className="page-head">
+        <div className="eyebrow">Insights · balance</div>
+        <h1 className="page-title">Life Areas</h1>
+        <div className="page-sub">
+          The domains everything else hangs off. Scores reflect task completion.
         </div>
-        <Button onClick={() => setShowForm((v) => !v)}>
-          <Plus className="size-4" /> New area
-        </Button>
       </div>
 
-      {showForm && <NewAreaForm onClose={() => setShowForm(false)} />}
+      <div className="mb-[var(--gap)] flex justify-end">
+        <button
+          type="button"
+          onClick={() => setShowForm((v) => !v)}
+          className="ds-btn ghost"
+        >
+          <Plus className="size-3.5" /> New area
+        </button>
+      </div>
 
-      {isLoading && (
-        <p className="mt-8 text-sm text-tx-3">Loading areas…</p>
+      {showForm && (
+        <div className="mb-[var(--gap)]">
+          <NewAreaForm onClose={() => setShowForm(false)} />
+        </div>
       )}
 
+      {isLoading && <p className="text-sm text-tx-3">Loading areas…</p>}
       {isError && (
-        <p className="mt-8 text-sm text-danger">
+        <p className="text-sm text-danger">
           Couldn't load your areas. Is the backend running?
         </p>
       )}
 
-      {areas && areas.length === 0 && !showForm && (
-        <div className="mt-10 rounded-xl border border-dashed border-line-2 p-12 text-center">
-          <p className="text-sm text-tx-2">No areas yet.</p>
-          <p className="mt-1 text-sm text-tx-3">
-            Create your first life domain to start organizing everything else.
-          </p>
-          <Button className="mt-5" onClick={() => setShowForm(true)}>
-            <Plus className="size-4" /> Create your first area
-          </Button>
-        </div>
+      {areas && areas.length > 0 && (
+        <>
+          {/* Average summary */}
+          <div className="card raised card-pad mb-[var(--gap)] flex items-center gap-[22px]">
+            <Donut value={avg} size={92} stroke={9} color="var(--acc)">
+              <span className="font-mono text-[26px] font-semibold">{avg}</span>
+            </Donut>
+            <div>
+              <div className="eyebrow mb-1">Average across all areas</div>
+              <div className="h-display mb-0.5 text-[20px]">
+                You're {balance}
+              </div>
+              {strongest && weakest && (
+                <div className="text-[13px] text-tx-3">
+                  Strongest:{" "}
+                  <span style={{ color: strongest.area.color }}>
+                    {strongest.area.name}
+                  </span>{" "}
+                  · Needs love:{" "}
+                  <span style={{ color: weakest.area.color }}>
+                    {weakest.area.name}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="grid gap-[var(--gap)] sm:grid-cols-2 lg:grid-cols-3">
+            {areas.map((area) => (
+              <AreaCard
+                key={area.id}
+                area={area}
+                stats={statsByArea.get(area.id)!}
+              />
+            ))}
+          </div>
+        </>
       )}
 
-      {areas && areas.length > 0 && (
-        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {areas.map((area) => (
-            <AreaCard key={area.id} area={area} />
-          ))}
+      {areas && areas.length === 0 && !showForm && (
+        <div className="card card-pad empty mt-[var(--gap)]">
+          No areas yet — create your first life domain.
         </div>
       )}
     </div>

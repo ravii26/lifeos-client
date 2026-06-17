@@ -25,3 +25,11 @@ export interface RegisterRequest {
   name: string;
   timezone?: string;
 }
+
+/** GET /auth/stats — lifetime momentum numbers (B10). */
+export interface ProfileStats {
+  joinedAt: string;
+  tasksDone: number;
+  habitsLogged: number;
+  focusHours: number;
+}

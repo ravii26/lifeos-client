@@ -3,6 +3,14 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { DateInput } from "@/components/ui/date-input";
 import { cn } from "@/lib/utils";
 import type { ApiError } from "@/lib/api/axiosBaseQuery";
 import { parseApiErrors, type FieldErrorMap } from "@/lib/api/formErrors";
@@ -11,9 +19,6 @@ import type { Area } from "@/features/areas/types";
 import { useCreateHabitMutation } from "../habitsApi";
 import { DAYS, FREQUENCIES, HABIT_TYPES } from "../constants";
 import type { Day, HabitFrequency, HabitType } from "../types";
-
-const selectClass =
-  "h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm text-tx outline-none focus-visible:border-ring [color-scheme:dark]";
 
 export function NewHabitForm({
   areas,
@@ -53,14 +58,12 @@ export function NewHabitForm({
         habitType,
         frequency,
         ...(description.trim() ? { description: description.trim() } : {}),
-        // Type-conditional targets.
         ...(habitType === "COUNT" && targetCount
           ? { targetCount: Number(targetCount) }
           : {}),
         ...(habitType === "TIMER" && targetMinutes
           ? { targetMinutes: Number(targetMinutes) }
           : {}),
-        // Frequency-conditional fields.
         ...(frequency === "WEEKLY" && weeklyTarget
           ? { weeklyTarget: Number(weeklyTarget) }
           : {}),
@@ -109,23 +112,17 @@ export function NewHabitForm({
 
       <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="habit-area">Area</Label>
-          <select
-            id="habit-area"
-            value={areaId}
-            onChange={(e) => setAreaId(e.target.value)}
-            aria-invalid={!!fieldErrors.areaId}
-            className={selectClass}
-          >
-            <option value="" disabled>
-              Select an area…
-            </option>
-            {areas.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.name}
-              </option>
-            ))}
-          </select>
+          <Label>Area</Label>
+          <Select value={areaId} onValueChange={setAreaId}>
+            <SelectTrigger aria-invalid={!!fieldErrors.areaId}>
+              <SelectValue placeholder="Select an area…" />
+            </SelectTrigger>
+            <SelectContent>
+              {areas.map((a) => (
+                <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           {fieldErrors.areaId && (
             <p className="text-xs text-danger">{fieldErrors.areaId}</p>
           )}
@@ -133,31 +130,28 @@ export function NewHabitForm({
 
         <div className="space-y-2">
           <Label htmlFor="habit-reminder">Reminder time</Label>
-          <Input
+          <DateInput
             id="habit-reminder"
-            type="time"
+            variant="time"
             value={reminderTime}
             onChange={(e) => setReminderTime(e.target.value)}
-            className="[color-scheme:dark]"
           />
         </div>
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="habit-type">Type</Label>
-          <select
-            id="habit-type"
-            value={habitType}
-            onChange={(e) => setHabitType(e.target.value as HabitType)}
-            className={selectClass}
-          >
-            {HABIT_TYPES.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label} — {t.hint}
-              </option>
-            ))}
-          </select>
+          <Label>Type</Label>
+          <Select value={habitType} onValueChange={(v) => setHabitType(v as HabitType)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {HABIT_TYPES.map((t) => (
+                <SelectItem key={t.value} value={t.value}>{t.label} — {t.hint}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {habitType === "COUNT" && (
@@ -191,19 +185,17 @@ export function NewHabitForm({
 
       <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="habit-frequency">Frequency</Label>
-          <select
-            id="habit-frequency"
-            value={frequency}
-            onChange={(e) => setFrequency(e.target.value as HabitFrequency)}
-            className={selectClass}
-          >
-            {FREQUENCIES.map((f) => (
-              <option key={f.value} value={f.value}>
-                {f.label} — {f.hint}
-              </option>
-            ))}
-          </select>
+          <Label>Frequency</Label>
+          <Select value={frequency} onValueChange={(v) => setFrequency(v as HabitFrequency)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {FREQUENCIES.map((f) => (
+                <SelectItem key={f.value} value={f.value}>{f.label} — {f.hint}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {frequency === "WEEKLY" && (

@@ -2,6 +2,7 @@ import { api } from "@/store/api";
 import type {
   AuthResponse,
   LoginRequest,
+  ProfileStats,
   RegisterRequest,
   User,
 } from "./types";
@@ -27,8 +28,17 @@ export const authApi = api.injectEndpoints({
       query: () => ({ url: "/auth/me", method: "GET" }),
       providesTags: ["Auth"],
     }),
+    getStats: builder.query<ProfileStats, void>({
+      query: () => ({ url: "/auth/stats", method: "GET" }),
+      providesTags: ["Auth"],
+    }),
   }),
 });
 
 // Auto-generated hooks — one per endpoint.
-export const { useRegisterMutation, useLoginMutation, useMeQuery } = authApi;
+export const {
+  useRegisterMutation,
+  useLoginMutation,
+  useMeQuery,
+  useGetStatsQuery,
+} = authApi;

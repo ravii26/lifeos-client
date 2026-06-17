@@ -21,7 +21,7 @@ export function ReviewCard({ review }: { review: Review }) {
   return (
     <Link
       to={`/review/${review.id}`}
-      className="group flex flex-col rounded-xl border border-line bg-surface-1 p-4 transition-colors hover:border-line-3"
+      className="card card-pad group flex flex-col transition-colors hover:border-line-2"
     >
       <div className="flex items-start justify-between gap-2">
         <div>

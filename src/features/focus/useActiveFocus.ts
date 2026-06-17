@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 import {
   useListFocusQuery,
@@ -45,8 +46,17 @@ export function useActiveFocus() {
     active,
     elapsedMs,
     label: formatElapsed(elapsedMs),
-    start: () => !starting && startFocus(),
-    stop: () => active && !stopping && stopFocus(active.id),
+    start: async (taskId?: string) => {
+      if (starting) return;
+      await startFocus(taskId ? { taskId } : undefined);
+      toast("Focus session started", { icon: "⚡" });
+    },
+    stop: async () => {
+      if (!active || stopping) return;
+      const elapsed = formatElapsed(Date.now() - new Date(active.startedAt).getTime());
+      await stopFocus(active.id);
+      toast(`Session logged · ${elapsed}`, { icon: "⏸" });
+    },
     starting,
     stopping,
   };

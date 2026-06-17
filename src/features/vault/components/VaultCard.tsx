@@ -1,77 +1,90 @@
-import { ExternalLink, Heart, Trash2 } from "lucide-react";
+import { ExternalLink, Heart, Sparkles, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
-import { useDeleteVaultMutation } from "../vaultApi";
+import { useDeleteVaultMutation, useMarkVaultUsedMutation } from "../vaultApi";
 import { VAULT_TYPE_BY_VALUE } from "../constants";
 import type { VaultItem } from "../types";
 
 export function VaultCard({ item }: { item: VaultItem }) {
   const [deleteVault, { isLoading: deleting }] = useDeleteVaultMutation();
+  const [markUsed, { isLoading: pulling }] = useMarkVaultUsedMutation();
   const meta = VAULT_TYPE_BY_VALUE[item.vaultType];
 
   return (
     <div
-      className="relative overflow-hidden rounded-xl border border-line bg-surface-1 p-4 pl-5"
-      style={{ borderLeftColor: meta.accent, borderLeftWidth: 3 }}
+      className="card card-pad group flex flex-col overflow-hidden"
+      style={{ borderLeft: `3px solid ${meta.accent}` }}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <span
-            className="font-mono text-[10px] uppercase tracking-[0.13em]"
-            style={{ color: meta.accent }}
-          >
-            {meta.label}
-          </span>
-          <div className="truncate text-sm font-semibold">{item.title}</div>
-        </div>
-        <button
-          type="button"
-          onClick={() => deleteVault(item.id)}
-          disabled={deleting}
-          title="Delete"
-          className="grid size-7 shrink-0 place-items-center rounded-md text-tx-4 transition-colors hover:bg-surface-3 hover:text-danger disabled:opacity-50"
+      <div className="mb-2.5 flex items-center justify-between">
+        <span
+          className="chip border-transparent"
+          style={{ color: meta.accent, background: `${meta.accent}1a` }}
         >
-          <Trash2 className="size-4" />
-        </button>
+          {meta.label}
+        </span>
+        <div className="flex items-center gap-2">
+          {item.usedCount != null && (
+            <span className="font-mono text-[10px] text-tx-4">
+              used {item.usedCount}×
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={() => deleteVault(item.id)}
+            disabled={deleting}
+            title="Delete"
+            className="text-tx-4 opacity-0 transition hover:text-danger group-hover:opacity-100 disabled:opacity-50"
+          >
+            <Trash2 className="size-3.5" />
+          </button>
+        </div>
       </div>
 
-      <p className="mt-2 whitespace-pre-wrap text-sm text-tx-2">
+      <div className="mb-1.5 text-[14.5px] font-[650]">{item.title}</div>
+      <p className="m-0 mb-3.5 flex-1 text-[13px] leading-relaxed whitespace-pre-wrap text-tx-2">
         {item.content}
       </p>
 
-      {item.url && (
-        <a
-          href={item.url}
-          target="_blank"
-          rel="noreferrer"
-          className="mt-2 inline-flex items-center gap-1 text-xs text-primary hover:underline"
-        >
-          <ExternalLink className="size-3.5" /> Open
-        </a>
-      )}
-
-      {item.triggerTags && item.triggerTags.length > 0 && (
-        <div className="mt-3 flex flex-wrap gap-1.5">
-          {item.triggerTags.map((t) => (
-            <span
-              key={t}
-              className="rounded-full bg-surface-3 px-2 py-0.5 text-[10px] text-tx-3"
-            >
-              #{t}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex flex-wrap gap-1.5">
+          {(item.triggerTags ?? []).map((t) => (
+            <span key={t} className="chip text-[10px]">
+              {t}
             </span>
           ))}
         </div>
-      )}
-
-      {(item.usedCount != null || item.helpfulCount != null) && (
-        <div className="mt-3 flex items-center gap-3 border-t border-line-2 pt-2.5 text-[11px] text-tx-4">
-          {item.usedCount != null && <span>Used {item.usedCount}×</span>}
+        <div className="flex items-center gap-2 text-tx-4">
           {item.helpfulCount != null && (
-            <span className="flex items-center gap-1">
+            <span className="flex items-center gap-1 text-[11px]">
               <Heart className="size-3" /> {item.helpfulCount}
             </span>
           )}
+          {item.url && (
+            <a
+              href={item.url}
+              target="_blank"
+              rel="noreferrer"
+              className="hover:text-primary"
+              title="Open"
+            >
+              <ExternalLink className="size-3.5" />
+            </a>
+          )}
+          <button
+            type="button"
+            onClick={async () => {
+              await markUsed(item.id);
+              toast(`"${item.title}" pulled from vault`, { icon: "✨" });
+            }}
+            disabled={pulling}
+            title="Pull from vault"
+            className="flex items-center gap-1 text-[11px] hover:text-tx disabled:opacity-50"
+          >
+            <Sparkles className="size-3" />
+            Pull
+          </button>
         </div>
-      )}
+      </div>
     </div>
   );
 }

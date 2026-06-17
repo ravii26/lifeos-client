@@ -31,7 +31,7 @@ export function FocusTimer() {
   return (
     <button
       type="button"
-      onClick={start}
+      onClick={() => start()}
       disabled={starting}
       title="Start a focus session"
       className="flex items-center gap-1.5 rounded-full border border-line-2 px-3 py-1.5 text-xs font-medium text-tx-2 transition-colors hover:border-acc-line hover:text-tx disabled:opacity-60"

@@ -4,9 +4,18 @@ import { useLocation } from "react-router-dom";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { logout } from "@/features/auth/authSlice";
 import { useAppDispatch } from "@/store/hooks";
 import { FocusTimer } from "@/features/focus/components/FocusTimer";
+import { useGetSettingsQuery, useUpdateSettingsMutation } from "@/features/settings/settingsApi";
+import type { Vibe } from "@/features/settings/types";
 
 const TITLES: Record<string, string> = {
   "/": "Dashboard",
@@ -32,9 +41,14 @@ export function Topbar({
   const dispatch = useAppDispatch();
   const { pathname } = useLocation();
   const title = TITLES[pathname] ?? "LifeOS";
-  // Ambient UI preferences from the design (cosmetic — no backend).
-  const [vibe, setVibe] = useState("Default");
+  const { data: settings } = useGetSettingsQuery();
+  const [updateSettings] = useUpdateSettingsMutation();
   const [focusMode, setFocusMode] = useState(false);
+
+  const vibe: Vibe = settings?.vibe ?? "focused";
+  const handleVibeChange = (v: string) => {
+    updateSettings({ vibe: v as Vibe });
+  };
 
   return (
     <header className="flex h-14 shrink-0 items-center gap-3 border-b border-line bg-surface-1/70 px-5 backdrop-blur">
@@ -44,18 +58,17 @@ export function Topbar({
       {/* Persistent focus timer — lives in the shell so it survives navigation. */}
       <FocusTimer />
 
-      {/* Vibe selector (ambient mood preset). */}
-      <select
-        value={vibe}
-        onChange={(e) => setVibe(e.target.value)}
-        title="Vibe"
-        className="cursor-pointer rounded-[var(--r-sm)] border border-line bg-surface-2 py-1.5 pr-7 pl-3 text-xs font-medium text-tx-2 outline-none [appearance:none] hover:border-line-2 [color-scheme:dark]"
-      >
-        <option>Default</option>
-        <option>Calm</option>
-        <option>Energized</option>
-        <option>Deep Work</option>
-      </select>
+      {/* Vibe selector — reads/writes to backend settings. */}
+      <Select value={vibe} onValueChange={handleVibeChange}>
+        <SelectTrigger className="h-8 w-[110px] rounded-[var(--r-sm)] border-line bg-surface-2 text-xs font-medium text-tx-2 hover:border-line-2">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="focused">Focused</SelectItem>
+          <SelectItem value="calm">Calm</SelectItem>
+          <SelectItem value="energetic">Energetic</SelectItem>
+        </SelectContent>
+      </Select>
 
       {/* Focus Mode toggle. */}
       <button

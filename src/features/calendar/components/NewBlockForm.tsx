@@ -3,14 +3,19 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { DateInput } from "@/components/ui/date-input";
 import type { ApiError } from "@/lib/api/axiosBaseQuery";
 import { parseApiErrors, type FieldErrorMap } from "@/lib/api/formErrors";
 import type { Area } from "@/features/areas/types";
 
 import { useCreateCalendarMutation } from "../calendarApi";
-
-const selectClass =
-  "h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm text-tx outline-none focus-visible:border-ring [color-scheme:dark]";
 
 function toIso(date: string, time: string): string {
   return new Date(`${date}T${time}`).toISOString();
@@ -21,7 +26,7 @@ export function NewBlockForm({
   areas,
   onClose,
 }: {
-  date: string; // YYYY-MM-DD the calendar is currently showing
+  date: string;
   areas: Area[];
   onClose: () => void;
 }) {
@@ -41,7 +46,6 @@ export function NewBlockForm({
     setFieldErrors({});
     setFormError(null);
 
-    // Backend rejects endTime <= startTime — catch it before the round-trip.
     if (end <= start) {
       setFormError("End time must be after start time.");
       return;
@@ -87,23 +91,21 @@ export function NewBlockForm({
       <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
         <div className="space-y-2">
           <Label htmlFor="block-start">Start</Label>
-          <Input
+          <DateInput
             id="block-start"
-            type="time"
+            variant="time"
             value={start}
             onChange={(e) => setStart(e.target.value)}
-            className="[color-scheme:dark]"
           />
         </div>
         <div className="space-y-2">
           <Label htmlFor="block-end">End</Label>
-          <Input
+          <DateInput
             id="block-end"
-            type="time"
+            variant="time"
             value={end}
             onChange={(e) => setEnd(e.target.value)}
             aria-invalid={!!fieldErrors.endTime}
-            className="[color-scheme:dark]"
           />
         </div>
         <div className="space-y-2">
@@ -116,20 +118,18 @@ export function NewBlockForm({
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="block-area">Area</Label>
-          <select
-            id="block-area"
-            value={areaId}
-            onChange={(e) => setAreaId(e.target.value)}
-            className={selectClass}
-          >
-            <option value="">None</option>
-            {areas.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.name}
-              </option>
-            ))}
-          </select>
+          <Label>Area</Label>
+          <Select value={areaId} onValueChange={setAreaId}>
+            <SelectTrigger>
+              <SelectValue placeholder="None" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">None</SelectItem>
+              {areas.map((a) => (
+                <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 

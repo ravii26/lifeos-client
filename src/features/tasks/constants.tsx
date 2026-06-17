@@ -9,12 +9,20 @@ export const PRIORITIES: {
   label: string;
   dot: string;
   tone: string;
+  /** Short pill code + hex for the design's `.pri` pill. */
+  code: string;
+  hex: string;
 }[] = [
-  { value: "LOW", label: "Low", dot: "bg-tx-4", tone: "text-tx-3" },
-  { value: "MEDIUM", label: "Medium", dot: "bg-ok", tone: "text-ok" },
-  { value: "HIGH", label: "High", dot: "bg-warn", tone: "text-warn" },
-  { value: "CRITICAL", label: "Critical", dot: "bg-danger", tone: "text-danger" },
+  { value: "LOW", label: "Low", dot: "bg-tx-4", tone: "text-tx-3", code: "P3", hex: "#6b717a" },
+  { value: "MEDIUM", label: "Medium", dot: "bg-ok", tone: "text-ok", code: "P2", hex: "#ffb547" },
+  { value: "HIGH", label: "High", dot: "bg-warn", tone: "text-warn", code: "P1", hex: "#ff8a8a" },
+  { value: "CRITICAL", label: "Critical", dot: "bg-danger", tone: "text-danger", code: "P0", hex: "#ff5d62" },
 ];
+
+/** Renders the `.pri` pill for a priority value (design-faithful). */
+export function priStyle(hex: string) {
+  return { color: hex, background: `${hex}24` };
+}
 
 export const PRIORITY_BY_VALUE = Object.fromEntries(
   PRIORITIES.map((p) => [p.value, p]),

@@ -1,6 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
-import { ComingSoon } from "@/components/ComingSoon";
+import { DumpPage } from "@/features/capture/pages/DumpPage";
 import { AppShell } from "@/components/layout/AppShell";
 import { ProtectedRoute } from "@/features/auth/ProtectedRoute";
 import { SessionLoader } from "@/features/auth/SessionLoader";
@@ -17,6 +17,7 @@ import { ReviewsPage } from "@/features/reviews/pages/ReviewsPage";
 import { ReviewDetailPage } from "@/features/reviews/pages/ReviewDetailPage";
 import { CalendarPage } from "@/features/calendar/pages/CalendarPage";
 import { IdentityPage } from "@/features/identity/pages/IdentityPage";
+import { ImmersiveMode } from "@/features/focus/pages/ImmersiveMode";
 import { TasksPage } from "@/features/tasks/pages/TasksPage";
 
 function App() {
@@ -30,6 +31,8 @@ function App() {
 
           {/* Protected routes — gated, then framed by the app shell */}
           <Route element={<ProtectedRoute />}>
+            {/* Full-screen, outside the shell */}
+            <Route path="/focus" element={<ImmersiveMode />} />
             <Route element={<AppShell />}>
               <Route path="/" element={<DashboardPage />} />
               <Route path="/areas" element={<AreasPage />} />
@@ -42,7 +45,7 @@ function App() {
               <Route path="/learn" element={<TopicsPage />} />
               <Route path="/learn/:topicId" element={<TopicDetailPage />} />
               <Route path="/vault" element={<VaultPage />} />
-              <Route path="/dump" element={<ComingSoon />} />
+              <Route path="/dump" element={<DumpPage />} />
               <Route path="/settings" element={<IdentityPage />} />
             </Route>
           </Route>

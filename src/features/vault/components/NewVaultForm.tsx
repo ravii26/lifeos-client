@@ -3,6 +3,13 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { ApiError } from "@/lib/api/axiosBaseQuery";
 import { parseApiErrors, type FieldErrorMap } from "@/lib/api/formErrors";
 
@@ -10,10 +17,6 @@ import { useCreateVaultMutation } from "../vaultApi";
 import { MEDIA_TYPES, VAULT_TYPES } from "../constants";
 import type { MediaType, VaultType } from "../types";
 
-const selectClass =
-  "h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm text-tx outline-none focus-visible:border-ring [color-scheme:dark]";
-
-/** Split a comma-separated tag string into a clean array. */
 function parseTags(raw: string): string[] {
   return raw
     .split(",")
@@ -93,35 +96,31 @@ export function NewVaultForm({ onClose }: { onClose: () => void }) {
 
       <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="vault-type">Type</Label>
-          <select
-            id="vault-type"
-            value={vaultType}
-            onChange={(e) => setVaultType(e.target.value as VaultType)}
-            className={selectClass}
-          >
-            {VAULT_TYPES.map((v) => (
-              <option key={v.value} value={v.value}>
-                {v.label} — {v.hint}
-              </option>
-            ))}
-          </select>
+          <Label>Type</Label>
+          <Select value={vaultType} onValueChange={(v) => setVaultType(v as VaultType)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {VAULT_TYPES.map((v) => (
+                <SelectItem key={v.value} value={v.value}>{v.label} — {v.hint}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="vault-media">Media</Label>
-          <select
-            id="vault-media"
-            value={mediaType}
-            onChange={(e) => setMediaType(e.target.value as MediaType)}
-            className={selectClass}
-          >
-            {MEDIA_TYPES.map((m) => (
-              <option key={m.value} value={m.value}>
-                {m.label}
-              </option>
-            ))}
-          </select>
+          <Label>Media</Label>
+          <Select value={mediaType} onValueChange={(v) => setMediaType(v as MediaType)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {MEDIA_TYPES.map((m) => (
+                <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 

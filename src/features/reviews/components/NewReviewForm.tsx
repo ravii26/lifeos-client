@@ -1,17 +1,21 @@
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { DateInput } from "@/components/ui/date-input";
 import type { ApiError } from "@/lib/api/axiosBaseQuery";
 import { parseApiErrors, type FieldErrorMap } from "@/lib/api/formErrors";
 
 import { useCreateReviewMutation } from "../reviewsApi";
 import { REVIEW_TYPES, periodFor, toDateInput } from "../constants";
 import type { ReviewType } from "../types";
-
-const selectClass =
-  "h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm text-tx outline-none focus-visible:border-ring [color-scheme:dark]";
 
 const textareaClass =
   "w-full resize-y rounded-md border border-input bg-transparent px-3 py-2 text-sm text-tx outline-none placeholder:text-tx-4 focus-visible:border-ring";
@@ -29,7 +33,6 @@ export function NewReviewForm({ onClose }: { onClose: () => void }) {
   const [formError, setFormError] = useState<string | null>(null);
   const [createReview, { isLoading }] = useCreateReviewMutation();
 
-  // Picking a type re-derives the period window (still editable after).
   const onTypeChange = (t: ReviewType) => {
     setReviewType(t);
     const p = periodFor(t);
@@ -67,40 +70,34 @@ export function NewReviewForm({ onClose }: { onClose: () => void }) {
     >
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="space-y-2">
-          <Label htmlFor="review-type">Type</Label>
-          <select
-            id="review-type"
-            value={reviewType}
-            onChange={(e) => onTypeChange(e.target.value as ReviewType)}
-            className={selectClass}
-          >
-            {REVIEW_TYPES.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
-              </option>
-            ))}
-          </select>
+          <Label>Type</Label>
+          <Select value={reviewType} onValueChange={(v) => onTypeChange(v as ReviewType)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {REVIEW_TYPES.map((t) => (
+                <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div className="space-y-2">
           <Label htmlFor="review-start">Period start</Label>
-          <Input
+          <DateInput
             id="review-start"
-            type="date"
             value={periodStart}
             onChange={(e) => setPeriodStart(e.target.value)}
             aria-invalid={!!fieldErrors.periodStart}
-            className="[color-scheme:dark]"
           />
         </div>
         <div className="space-y-2">
           <Label htmlFor="review-end">Period end</Label>
-          <Input
+          <DateInput
             id="review-end"
-            type="date"
             value={periodEnd}
             onChange={(e) => setPeriodEnd(e.target.value)}
             aria-invalid={!!fieldErrors.periodEnd}
-            className="[color-scheme:dark]"
           />
         </div>
       </div>

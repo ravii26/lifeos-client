@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Plus } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { Stat } from "@/components/ui/Stat";
 import { useListAreasQuery } from "@/features/areas/areasApi";
 
 import { useListTopicsQuery } from "../knowledgeApi";
@@ -21,72 +22,97 @@ export function TopicsPage() {
   const areaById = new Map((areas ?? []).map((a) => [a.id, a]));
   const hasAreas = (areas ?? []).length > 0;
 
+  const stats = useMemo(() => {
+    const list = topics ?? [];
+    const adv = list.filter(
+      (t) => t.masteryLevel === "ADVANCED" || t.masteryLevel === "EXPERT",
+    ).length;
+    const areasCovered = new Set(list.map((t) => t.areaId)).size;
+    return [
+      { num: list.length, label: "Topics" },
+      { num: adv, label: "Advanced+", color: "var(--acc)" },
+      { num: list.length - adv, label: "Still learning" },
+      { num: areasCovered, label: "Areas covered" },
+    ];
+  }, [topics]);
+
   return (
-    <div className="mx-auto max-w-5xl p-8">
-      <div className="flex items-end justify-between gap-4">
-        <div>
-          <div className="font-mono text-[10.5px] uppercase tracking-[0.13em] text-tx-3">
-            Insights · knowledge
-          </div>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">Learn</h1>
-          <p className="mt-1 text-sm text-tx-3">
-            Topics you're studying — with resources, notebooks, and notes.
-          </p>
+    <div className="page rise">
+      <div className="page-head">
+        <div className="eyebrow">Insights · second brain</div>
+        <h1 className="page-title">Learn</h1>
+        <div className="page-sub">
+          Topics you're studying — resources, notebooks, and notes in one place.
         </div>
-        <Button onClick={() => setShowForm((v) => !v)} disabled={!hasAreas}>
-          <Plus className="size-4" /> New topic
-        </Button>
+      </div>
+
+      <div className="mb-[var(--gap)] flex items-center justify-between gap-4">
+        {/* Area filter chips */}
+        <div className="flex flex-wrap gap-1.5">
+          <button
+            type="button"
+            className={cn("tag-toggle", areaFilter === "" && "on")}
+            onClick={() => setAreaFilter("")}
+          >
+            all areas
+          </button>
+          {(areas ?? []).map((a) => (
+            <button
+              key={a.id}
+              type="button"
+              className={cn("tag-toggle", areaFilter === a.id && "on")}
+              onClick={() => setAreaFilter(a.id)}
+              style={
+                areaFilter === a.id
+                  ? { background: a.color, borderColor: "transparent", color: "#0a0b0d" }
+                  : undefined
+              }
+            >
+              {a.name}
+            </button>
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowForm((v) => !v)}
+          disabled={!hasAreas}
+          className="ds-btn ghost shrink-0"
+        >
+          <Plus className="size-3.5" /> New topic
+        </button>
       </div>
 
       {!hasAreas && (
-        <p className="mt-6 rounded-lg border border-line-2 bg-surface-2 p-4 text-sm text-tx-3">
+        <div className="card card-pad mb-[var(--gap)] text-sm text-tx-3">
           Create a life area first — topics must belong to one.
-        </p>
+        </div>
       )}
 
-      {hasAreas && (areas?.length ?? 0) > 1 && (
-        <div className="mt-6 flex items-center gap-2">
-          <span className="text-xs text-tx-3">Area</span>
-          <select
-            value={areaFilter}
-            onChange={(e) => setAreaFilter(e.target.value)}
-            className="h-8 rounded-md border border-input bg-transparent px-2.5 text-sm text-tx outline-none focus-visible:border-ring [color-scheme:dark]"
-          >
-            <option value="">All</option>
-            {areas?.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.name}
-              </option>
-            ))}
-          </select>
+      {hasAreas && (
+        <div className="mb-[var(--gap)] grid grid-cols-2 gap-[var(--gap)] sm:grid-cols-4">
+          {stats.map((x) => (
+            <div key={x.label} className="card card-pad">
+              <Stat num={x.num} label={x.label} color={x.color} />
+            </div>
+          ))}
         </div>
       )}
 
       {showForm && (
-        <NewTopicForm areas={areas ?? []} onClose={() => setShowForm(false)} />
+        <div className="mb-[var(--gap)]">
+          <NewTopicForm areas={areas ?? []} onClose={() => setShowForm(false)} />
+        </div>
       )}
 
-      {isLoading && <p className="mt-8 text-sm text-tx-3">Loading topics…</p>}
+      {isLoading && <p className="text-sm text-tx-3">Loading topics…</p>}
       {isError && (
-        <p className="mt-8 text-sm text-danger">
+        <p className="text-sm text-danger">
           Couldn't load your topics. Is the backend running?
         </p>
       )}
 
-      {topics && topics.length === 0 && !showForm && hasAreas && (
-        <div className="mt-10 rounded-xl border border-dashed border-line-2 p-12 text-center">
-          <p className="text-sm text-tx-2">No topics yet.</p>
-          <p className="mt-1 text-sm text-tx-3">
-            Start a topic to collect what you're learning.
-          </p>
-          <Button className="mt-5" onClick={() => setShowForm(true)}>
-            <Plus className="size-4" /> Create your first topic
-          </Button>
-        </div>
-      )}
-
       {topics && topics.length > 0 && (
-        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-[var(--gap)] sm:grid-cols-2 lg:grid-cols-3">
           {topics.map((topic) => (
             <TopicCard
               key={topic.id}
@@ -94,6 +120,12 @@ export function TopicsPage() {
               area={areaById.get(topic.areaId)}
             />
           ))}
+        </div>
+      )}
+
+      {topics && topics.length === 0 && !showForm && hasAreas && (
+        <div className="card card-pad empty">
+          No topics yet — start one to collect what you're learning.
         </div>
       )}
     </div>

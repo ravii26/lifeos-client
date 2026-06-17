@@ -1,17 +1,31 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Check } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Stat } from "@/components/ui/Stat";
 import type { ApiError } from "@/lib/api/axiosBaseQuery";
 import { parseApiErrors, type FieldErrorMap } from "@/lib/api/formErrors";
+import { selectCurrentUser } from "@/features/auth/authSlice";
+import { useAppSelector } from "@/store/hooks";
+import { useGetStatsQuery } from "@/features/auth/authApi";
+import { useListAreasQuery } from "@/features/areas/areasApi";
 
 import { useGetIdentityQuery, useUpdateIdentityMutation } from "../identityApi";
 import type { Identity } from "../types";
+import { useGetSettingsQuery, useUpdateSettingsMutation } from "@/features/settings/settingsApi";
+import type { FontPreference, StartTab, Vibe } from "@/features/settings/types";
 
 const textareaClass =
-  "w-full resize-y rounded-md border border-input bg-transparent px-3 py-2 text-sm text-tx outline-none placeholder:text-tx-4 focus-visible:border-ring";
+  "w-full resize-y rounded-[var(--r-sm)] border border-line-2 bg-inset px-3 py-2 text-sm text-tx outline-none placeholder:text-tx-4 focus-visible:border-acc-line";
 
 const splitTags = (raw: string) =>
   raw
@@ -20,16 +34,70 @@ const splitTags = (raw: string) =>
     .filter(Boolean);
 
 export function IdentityPage() {
+  const user = useAppSelector(selectCurrentUser);
   const { data: identity, isLoading } = useGetIdentityQuery();
+  const { data: stats } = useGetStatsQuery();
+  const { data: areas } = useListAreasQuery();
 
-  if (isLoading) {
-    return <p className="p-8 text-sm text-tx-3">Loading your identity…</p>;
-  }
+  const tasksDone = stats?.tasksDone ?? 0;
+  const habitsLogged = stats?.habitsLogged ?? 0;
+  const focusHours = stats ? Math.round(stats.focusHours * 10) / 10 : 0;
+  const areaCount = (areas ?? []).length;
+  const initial = user?.name?.[0]?.toUpperCase() ?? "?";
 
-  // Remount the form once the record resolves so its state seeds from props
-  // (no seeding effect needed). `key` flips null → real id after first save.
   return (
-    <IdentityForm key={identity?.id ?? "new"} identity={identity ?? null} />
+    <div className="page rise" style={{ maxWidth: 920 }}>
+      <div className="page-head">
+        <div className="eyebrow">Account</div>
+        <h1 className="page-title">Settings</h1>
+        <div className="page-sub">
+          Your profile, identity compass, and lifetime momentum.
+        </div>
+      </div>
+
+      {/* Profile header */}
+      <div className="card card-pad mb-[var(--gap)] flex items-center gap-4">
+        <div
+          className="grid size-[60px] shrink-0 place-items-center rounded-2xl text-2xl font-extrabold text-[var(--acc-ink)]"
+          style={{ background: "linear-gradient(135deg, var(--acc), var(--health))" }}
+        >
+          {initial}
+        </div>
+        <div className="flex-1">
+          <div className="text-[17px] font-[650]">{user?.name ?? "—"}</div>
+          <div className="text-[13px] text-tx-3">{user?.email}</div>
+          <div className="mt-1 font-mono text-[11px] text-tx-4">
+            {tasksDone} tasks done · {habitsLogged} habits logged · {areaCount} areas
+          </div>
+        </div>
+      </div>
+
+      {/* Lifetime stats — real numbers from GET /auth/stats (B10). */}
+      <div className="mb-[var(--gap)] grid grid-cols-2 gap-[var(--gap)] sm:grid-cols-4">
+        <div className="card card-pad">
+          <Stat num={tasksDone} label="Tasks completed" />
+        </div>
+        <div className="card card-pad">
+          <Stat num={habitsLogged} label="Habits logged" />
+        </div>
+        <div className="card card-pad">
+          <Stat num={`${focusHours}h`} label="Focus hours" color="var(--acc)" />
+        </div>
+        <div className="card card-pad">
+          <Stat num={areaCount} label="Life areas" />
+        </div>
+      </div>
+
+      {isLoading ? (
+        <p className="text-sm text-tx-3">Loading your identity…</p>
+      ) : (
+        <IdentityForm key={identity?.id ?? "new"} identity={identity ?? null} />
+      )}
+
+      <div className="mt-[var(--gap)]">
+        <AppSettingsCard />
+      </div>
+    </div>
   );
 }
 
@@ -83,16 +151,11 @@ function IdentityForm({ identity }: { identity: Identity | null }) {
   };
 
   return (
-    <div className="mx-auto max-w-2xl p-8">
-      <div className="font-mono text-[10.5px] uppercase tracking-[0.13em] text-tx-3">
-        Support · who you are
-      </div>
-      <h1 className="mt-1 text-2xl font-semibold tracking-tight">Identity</h1>
-      <p className="mt-1 text-sm text-tx-3">
-        The compass everything else points to. Optional, but powerful.
-      </p>
+    <form onSubmit={handleSubmit} className="card card-pad">
+      <div className="eyebrow mb-1">Profile · who you are</div>
+      <div className="card-title mb-4 text-[15px]">Identity compass</div>
 
-      <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+      <div className="space-y-5">
         <Field label="Purpose" htmlFor="id-purpose">
           <textarea
             id="id-purpose"
@@ -192,8 +255,87 @@ function IdentityForm({ identity }: { identity: Identity | null }) {
             </span>
           )}
         </div>
-      </form>
-    </div>
+      </div>
+    </form>
+  );
+}
+
+function AppSettingsCard() {
+  const { data: settings } = useGetSettingsQuery();
+  const [updateSettings, { isLoading: saving }] = useUpdateSettingsMutation();
+
+  const [vibe, setVibe] = useState<Vibe>("focused");
+  const [font, setFont] = useState<FontPreference>("inter");
+  const [startTab, setStartTab] = useState<StartTab>("today");
+
+  // Sync form state whenever settings load from the server.
+  useEffect(() => {
+    if (!settings) return;
+    setVibe(settings.vibe ?? "focused");
+    setFont(settings.font ?? "inter");
+    setStartTab(settings.startTab ?? "today");
+  }, [settings]);
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await updateSettings({ vibe, font, startTab });
+  };
+
+  return (
+    <form onSubmit={handleSave} className="card card-pad">
+      <div className="eyebrow mb-1">Preferences · appearance</div>
+      <div className="card-title mb-4 text-[15px]">App settings</div>
+
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+        <div className="space-y-2">
+          <label className="text-[13px] font-medium text-tx-2">Vibe</label>
+          <Select value={vibe} onValueChange={(v) => setVibe(v as Vibe)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="calm">Calm</SelectItem>
+              <SelectItem value="focused">Focused</SelectItem>
+              <SelectItem value="energetic">Energetic</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-[13px] font-medium text-tx-2">Font</label>
+          <Select value={font} onValueChange={(v) => setFont(v as FontPreference)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="inter">Inter (default)</SelectItem>
+              <SelectItem value="mono">Mono</SelectItem>
+              <SelectItem value="serif">Serif</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-[13px] font-medium text-tx-2">Start tab</label>
+          <Select value={startTab} onValueChange={(v) => setStartTab(v as StartTab)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="today">Today</SelectItem>
+              <SelectItem value="areas">Areas</SelectItem>
+              <SelectItem value="dump">Dump</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="mt-5 flex items-center gap-3">
+        <Button type="submit" disabled={saving}>
+          {saving ? "Saving…" : "Save preferences"}
+        </Button>
+      </div>
+    </form>
   );
 }
 

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Plus } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { Stat } from "@/components/ui/Stat";
 import { useLogBehaviorOnMount } from "@/features/behavior/behaviorApi";
 
 import { useListVaultQuery } from "../vaultApi";
@@ -21,98 +21,98 @@ export function VaultPage() {
   const [showForm, setShowForm] = useState(false);
   useLogBehaviorOnMount("VAULT_ACCESSED");
 
+  const all = items ?? [];
+  const timesPulled = all.reduce((s, v) => s + (v.usedCount ?? 0), 0);
+  const recovery = all.filter((v) => v.vaultType === "RECOVERY").length;
+  const categories = new Set(all.map((v) => v.vaultType)).size;
+
+  const stats = [
+    { num: all.length, label: "Total items" },
+    { num: timesPulled, label: "Times pulled", color: "var(--acc)" },
+    { num: recovery, label: "Recovery items" },
+    { num: categories, label: "Categories" },
+  ];
+
   return (
-    <div className="mx-auto max-w-5xl p-8">
-      <div className="flex items-end justify-between gap-4">
+    <div className="page rise">
+      <div className="page-head flex items-end justify-between gap-4">
         <div>
-          <div className="font-mono text-[10.5px] uppercase tracking-[0.13em] text-tx-3">
-            Support · the vault
+          <div className="eyebrow">Support · sanctuary</div>
+          <h1 className="page-title">Vault</h1>
+          <div className="page-sub">
+            Your personal strength system. Pull from it on low-energy days.
           </div>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">Vault</h1>
-          <p className="mt-1 text-sm text-tx-3">
-            Reflections, memories, and fuel for when you need them.
-          </p>
         </div>
-        <Button onClick={() => setShowForm((v) => !v)}>
-          <Plus className="size-4" /> New entry
-        </Button>
+        <button
+          type="button"
+          onClick={() => setShowForm((v) => !v)}
+          className="ds-btn ghost"
+        >
+          <Plus className="size-3.5" /> Add item
+        </button>
       </div>
 
-      {/* Type filter chips */}
-      <div className="mt-6 flex flex-wrap gap-2">
-        <FilterChip active={filter === ""} onClick={() => setFilter("")}>
-          All
-        </FilterChip>
-        {VAULT_TYPES.map((v) => (
-          <FilterChip
-            key={v.value}
-            active={filter === v.value}
-            accent={v.accent}
-            onClick={() => setFilter(v.value)}
-          >
-            {v.label}
-          </FilterChip>
+      <div className="mb-[var(--gap)] grid grid-cols-2 gap-[var(--gap)] sm:grid-cols-4">
+        {stats.map((x) => (
+          <div key={x.label} className="card card-pad">
+            <Stat num={x.num} label={x.label} color={x.color} />
+          </div>
         ))}
       </div>
 
-      {showForm && <NewVaultForm onClose={() => setShowForm(false)} />}
+      <div className="mb-[var(--gap)] flex flex-wrap gap-1.5">
+        <button
+          type="button"
+          className={cn("tag-toggle", filter === "" && "on")}
+          onClick={() => setFilter("")}
+        >
+          All
+        </button>
+        {VAULT_TYPES.map((v) => (
+          <button
+            key={v.value}
+            type="button"
+            className={cn("tag-toggle", filter === v.value && "on")}
+            onClick={() => setFilter(v.value)}
+            style={
+              filter === v.value
+                ? { background: v.accent, borderColor: "transparent", color: "#0a0b0d" }
+                : undefined
+            }
+          >
+            {v.label}
+          </button>
+        ))}
+      </div>
 
-      {isLoading && <p className="mt-8 text-sm text-tx-3">Loading vault…</p>}
+      {showForm && (
+        <div className="mb-[var(--gap)]">
+          <NewVaultForm onClose={() => setShowForm(false)} />
+        </div>
+      )}
+
+      {isLoading && <p className="text-sm text-tx-3">Loading vault…</p>}
       {isError && (
-        <p className="mt-8 text-sm text-danger">
+        <p className="text-sm text-danger">
           Couldn't load your vault. Is the backend running?
         </p>
       )}
 
-      {items && items.length === 0 && !showForm && (
-        <div className="mt-10 rounded-xl border border-dashed border-line-2 p-12 text-center">
-          <p className="text-sm text-tx-2">
-            {filter ? "Nothing here yet for this type." : "Your vault is empty."}
-          </p>
-          <p className="mt-1 text-sm text-tx-3">
-            Save the things you'll want to revisit on the hard days.
-          </p>
-          <Button className="mt-5" onClick={() => setShowForm(true)}>
-            <Plus className="size-4" /> Add your first entry
-          </Button>
-        </div>
-      )}
-
-      {items && items.length > 0 && (
-        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {items.map((item) => (
+      {all.length > 0 && (
+        <div className="grid gap-[var(--gap)] sm:grid-cols-2 lg:grid-cols-3">
+          {all.map((item) => (
             <VaultCard key={item.id} item={item} />
           ))}
         </div>
       )}
-    </div>
-  );
-}
 
-function FilterChip({
-  active,
-  accent,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  accent?: string;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
-        active
-          ? "border-transparent bg-surface-3 text-tx"
-          : "border-line-2 text-tx-3 hover:text-tx",
+      {items && all.length === 0 && !showForm && (
+        <div className="card card-pad empty">
+          {filter
+            ? "Nothing here yet for this type."
+            : "Your vault is empty — save what you'll want to revisit on the hard days."}
+        </div>
       )}
-      style={active && accent ? { color: accent } : undefined}
-    >
-      {children}
-    </button>
+    </div>
   );
 }

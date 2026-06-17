@@ -3,6 +3,14 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { DateInput } from "@/components/ui/date-input";
 import type { ApiError } from "@/lib/api/axiosBaseQuery";
 import { parseApiErrors, type FieldErrorMap } from "@/lib/api/formErrors";
 import type { Area } from "@/features/areas/types";
@@ -12,9 +20,6 @@ import type { Priority } from "@/features/tasks/types";
 import { useCreateGoalMutation } from "../goalsApi";
 import { STATUSES } from "../constants";
 import type { GoalStatus } from "../types";
-
-const selectClass =
-  "h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm text-tx outline-none focus-visible:border-ring [color-scheme:dark]";
 
 export function NewGoalForm({
   areas,
@@ -89,23 +94,17 @@ export function NewGoalForm({
 
       <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="goal-area">Area</Label>
-          <select
-            id="goal-area"
-            value={areaId}
-            onChange={(e) => setAreaId(e.target.value)}
-            aria-invalid={!!fieldErrors.areaId}
-            className={selectClass}
-          >
-            <option value="" disabled>
-              Select an area…
-            </option>
-            {areas.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.name}
-              </option>
-            ))}
-          </select>
+          <Label>Area</Label>
+          <Select value={areaId} onValueChange={setAreaId}>
+            <SelectTrigger aria-invalid={!!fieldErrors.areaId}>
+              <SelectValue placeholder="Select an area…" />
+            </SelectTrigger>
+            <SelectContent>
+              {areas.map((a) => (
+                <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           {fieldErrors.areaId && (
             <p className="text-xs text-danger">{fieldErrors.areaId}</p>
           )}
@@ -113,47 +112,41 @@ export function NewGoalForm({
 
         <div className="space-y-2">
           <Label htmlFor="goal-deadline">Deadline</Label>
-          <Input
+          <DateInput
             id="goal-deadline"
-            type="date"
             value={deadline}
             onChange={(e) => setDeadline(e.target.value)}
-            className="[color-scheme:dark]"
           />
         </div>
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="goal-priority">Priority</Label>
-          <select
-            id="goal-priority"
-            value={priority}
-            onChange={(e) => setPriority(e.target.value as Priority)}
-            className={selectClass}
-          >
-            {PRIORITIES.map((p) => (
-              <option key={p.value} value={p.value}>
-                {p.label}
-              </option>
-            ))}
-          </select>
+          <Label>Priority</Label>
+          <Select value={priority} onValueChange={(v) => setPriority(v as Priority)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {PRIORITIES.map((p) => (
+                <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="goal-status">Status</Label>
-          <select
-            id="goal-status"
-            value={status}
-            onChange={(e) => setStatus(e.target.value as GoalStatus)}
-            className={selectClass}
-          >
-            {STATUSES.map((s) => (
-              <option key={s.value} value={s.value}>
-                {s.label}
-              </option>
-            ))}
-          </select>
+          <Label>Status</Label>
+          <Select value={status} onValueChange={(v) => setStatus(v as GoalStatus)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {STATUSES.map((s) => (
+                <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 

@@ -3,15 +3,19 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { ApiError } from "@/lib/api/axiosBaseQuery";
 import { parseApiErrors, type FieldErrorMap } from "@/lib/api/formErrors";
 
 import { useCreateResourceMutation } from "../knowledgeApi";
 import { RESOURCE_STATUSES, RESOURCE_TYPES } from "../constants";
 import type { ResourceStatus, ResourceType } from "../types";
-
-const selectClass =
-  "h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm text-tx outline-none focus-visible:border-ring [color-scheme:dark]";
 
 export function NewResourceForm({
   topicId,
@@ -73,35 +77,31 @@ export function NewResourceForm({
 
       <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="res-type">Type</Label>
-          <select
-            id="res-type"
-            value={resourceType}
-            onChange={(e) => setResourceType(e.target.value as ResourceType)}
-            className={selectClass}
-          >
-            {RESOURCE_TYPES.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
-              </option>
-            ))}
-          </select>
+          <Label>Type</Label>
+          <Select value={resourceType} onValueChange={(v) => setResourceType(v as ResourceType)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {RESOURCE_TYPES.map((t) => (
+                <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="res-status">Status</Label>
-          <select
-            id="res-status"
-            value={status}
-            onChange={(e) => setStatus(e.target.value as ResourceStatus)}
-            className={selectClass}
-          >
-            {RESOURCE_STATUSES.map((s) => (
-              <option key={s.value} value={s.value}>
-                {s.label}
-              </option>
-            ))}
-          </select>
+          <Label>Status</Label>
+          <Select value={status} onValueChange={(v) => setStatus(v as ResourceStatus)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {RESOURCE_STATUSES.map((s) => (
+                <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 

@@ -51,6 +51,15 @@ export const vaultApi = api.injectEndpoints({
         { type: "Vault", id: "LIST" },
       ],
     }),
+
+    // B7 — increments usedCount, fires VAULT_ACCESSED server-side.
+    markVaultUsed: builder.mutation<VaultItem, string>({
+      query: (id) => ({ url: `/vault/${id}/used`, method: "POST" }),
+      invalidatesTags: (_res, _err, id) => [
+        { type: "Vault", id },
+        { type: "Vault", id: "LIST" },
+      ],
+    }),
   }),
 });
 
@@ -59,4 +68,5 @@ export const {
   useCreateVaultMutation,
   useUpdateVaultMutation,
   useDeleteVaultMutation,
+  useMarkVaultUsedMutation,
 } = vaultApi;

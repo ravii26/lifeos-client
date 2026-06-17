@@ -1,9 +1,11 @@
-import { useMemo } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useMemo, useRef } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { ArrowRight, Check, Play, Zap } from "lucide-react";
+import { toast } from "sonner";
 
 import { selectCurrentUser } from "@/features/auth/authSlice";
 import { useAppSelector } from "@/store/hooks";
+import { useGetSettingsQuery } from "@/features/settings/settingsApi";
 import { Donut } from "@/components/charts/Donut";
 import { Sparkline } from "@/components/charts/Sparkline";
 import { useListAreasQuery } from "@/features/areas/areasApi";
@@ -25,10 +27,23 @@ function greeting(): string {
   return "Good evening";
 }
 
+const START_TAB_ROUTES: Record<string, string> = { areas: "/areas", dump: "/dump" };
+
 export function DashboardPage() {
   const user = useAppSelector(selectCurrentUser);
   const firstName = user?.name.split(" ")[0];
   const focus = useActiveFocus();
+  const navigate = useNavigate();
+  const { data: settings } = useGetSettingsQuery();
+  const startTabApplied = useRef(false);
+
+  // On first render after settings load, honour the user's startTab preference.
+  useEffect(() => {
+    if (!settings || startTabApplied.current) return;
+    startTabApplied.current = true;
+    const route = START_TAB_ROUTES[settings.startTab];
+    if (route) navigate(route, { replace: true });
+  }, [settings, navigate]);
 
   const { data: areas } = useListAreasQuery();
   const { data: tasks } = useListTasksQuery();
@@ -124,7 +139,7 @@ export function DashboardPage() {
         </div>
         <button
           type="button"
-          onClick={focus.start}
+          onClick={() => focus.start()}
           disabled={!!focus.active || focus.starting}
           className="ds-btn acc"
         >
@@ -180,7 +195,7 @@ export function DashboardPage() {
               <div className="mt-auto flex gap-2 pt-[18px]">
                 <button
                   type="button"
-                  onClick={focus.start}
+                  onClick={() => focus.start()}
                   disabled={!!focus.active}
                   className="ds-btn acc"
                 >
@@ -188,7 +203,10 @@ export function DashboardPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => completeTask(nextAction.id)}
+                  onClick={async () => {
+                    await completeTask(nextAction.id);
+                    toast.success(`"${nextAction.title}" done`);
+                  }}
                   className="ds-btn ghost"
                 >
                   <Check className="size-3.5" /> Mark done

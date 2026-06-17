@@ -39,6 +39,9 @@ export interface CreateTaskRequest {
   isRecurring?: boolean;
   // Conditional on isRecurring.
   recurrence?: Recurrence;
+  // Provenance (B6): set when converting from a note/capture.
+  source?: "MANUAL" | "DUMP" | "LEARN";
+  sourceId?: string;
 }
 
 export type UpdateTaskRequest = Partial<CreateTaskRequest>;

@@ -5,6 +5,7 @@ import {
   Calendar,
   ClipboardCheck,
   Flag,
+  Focus,
   GraduationCap,
   LayoutDashboard,
   ListChecks,
@@ -44,6 +45,13 @@ export function CommandPalette({
       onClose();
     };
     return [
+      {
+        id: "immersive",
+        label: "Enter Immersive mode",
+        hint: "Focus",
+        icon: Focus,
+        run: go("/focus"),
+      },
       { id: "dash", label: "Dashboard", hint: "Go", icon: LayoutDashboard, run: go("/") },
       { id: "tasks", label: "Tasks", hint: "Go", icon: ListChecks, run: go("/tasks") },
       { id: "habits", label: "Habits", hint: "Go", icon: Repeat, run: go("/habits") },

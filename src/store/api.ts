@@ -33,6 +33,9 @@ export const api = createApi({
     "Calendar",
     "Focus",
     "Identity",
+    "Capture",
+    "AreaSnapshot",
+    "Settings",
   ],
   endpoints: () => ({}),
 });

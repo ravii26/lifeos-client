@@ -1,4 +1,5 @@
-import { Pause, Play, Zap } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Focus, Pause, Play } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { useActiveFocus } from "@/features/focus/useActiveFocus";
@@ -49,7 +50,7 @@ export function FocusCard() {
         ) : (
           <button
             type="button"
-            onClick={start}
+            onClick={() => start()}
             disabled={starting}
             className="ds-btn acc"
           >
@@ -57,9 +58,9 @@ export function FocusCard() {
             {starting ? "Starting…" : "Start focus"}
           </button>
         )}
-        <button type="button" onClick={start} className="ds-btn ghost">
-          <Zap className="size-3.5" /> Quick start
-        </button>
+        <Link to="/focus" className="ds-btn ghost">
+          <Focus className="size-3.5" /> Immersive
+        </Link>
       </div>
     </div>
   );

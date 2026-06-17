@@ -47,8 +47,19 @@ export interface Resource {
   status?: ResourceStatus | null;
   rating?: number | null;
   notes?: string | null;
+  // B8 progress fields
+  lessonsCompleted?: number | null;
+  totalLessons?: number | null;
+  minutesConsumed?: number | null;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface UpdateResourceProgressRequest {
+  lessonsCompleted?: number;
+  totalLessons?: number;
+  minutesConsumed?: number;
+  autoComplete?: boolean;
 }
 
 export interface Note {

@@ -10,8 +10,25 @@ export interface Area {
   order: number;
   isDefault: boolean;
   isActive: boolean;
+  // Server-computed scoring (A2 — present when backend returns them).
+  score?: number | null;
+  tasksDone?: number | null;
+  tasksTotal?: number | null;
+  streak?: number | null;
+  focusMins?: number | null;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface AreaScoreSnapshot {
+  id: string;
+  areaId: string;
+  score: number;
+  tasksDone: number;
+  tasksTotal: number;
+  streak: number;
+  focusMins: number;
+  createdAt: string;
 }
 
 export interface CreateAreaRequest {

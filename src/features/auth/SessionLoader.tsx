@@ -2,6 +2,7 @@ import { useEffect, type ReactNode } from "react";
 
 import { FullScreenLoader } from "@/components/FullScreenLoader";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { useApplySettings } from "@/features/settings/useApplySettings";
 
 import { useMeQuery } from "./authApi";
 import { logout, selectToken, setUser } from "./authSlice";
@@ -15,6 +16,7 @@ import { logout, selectToken, setUser } from "./authSlice";
 export function SessionLoader({ children }: { children: ReactNode }) {
   const dispatch = useAppDispatch();
   const token = useAppSelector(selectToken);
+  useApplySettings();
 
   // `skip` means: don't even call `me` when there's no token to validate.
   const { data, isError, isLoading } = useMeQuery(undefined, { skip: !token });

@@ -2,6 +2,13 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { ApiError } from "@/lib/api/axiosBaseQuery";
 import { parseApiErrors, type FieldErrorMap } from "@/lib/api/formErrors";
 import {
@@ -11,13 +18,6 @@ import {
 
 import { useAddInsightMutation } from "../reviewsApi";
 
-const selectClass =
-  "h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm text-tx outline-none focus-visible:border-ring [color-scheme:dark]";
-
-/**
- * Insights link a Note, but notes are listed per-topic — so we pick a topic
- * first, then one of its notes.
- */
 export function AddInsightForm({
   reviewId,
   onClose,
@@ -67,46 +67,31 @@ export function AddInsightForm({
     >
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="insight-topic">Topic</Label>
-          <select
-            id="insight-topic"
-            value={topicId}
-            onChange={(e) => {
-              setTopicId(e.target.value);
-              setNoteId("");
-            }}
-            className={selectClass}
-          >
-            <option value="" disabled>
-              Select a topic…
-            </option>
-            {topics?.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.title}
-              </option>
-            ))}
-          </select>
+          <Label>Topic</Label>
+          <Select value={topicId} onValueChange={(v) => { setTopicId(v); setNoteId(""); }}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select a topic…" />
+            </SelectTrigger>
+            <SelectContent>
+              {topics?.map((t) => (
+                <SelectItem key={t.id} value={t.id}>{t.title}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="insight-note">Note</Label>
-          <select
-            id="insight-note"
-            value={noteId}
-            onChange={(e) => setNoteId(e.target.value)}
-            disabled={!topicId}
-            aria-invalid={!!fieldErrors.noteId}
-            className={selectClass}
-          >
-            <option value="" disabled>
-              {topicId ? "Select a note…" : "Pick a topic first"}
-            </option>
-            {notes?.map((n) => (
-              <option key={n.id} value={n.id}>
-                {n.title}
-              </option>
-            ))}
-          </select>
+          <Label>Note</Label>
+          <Select value={noteId} onValueChange={setNoteId} disabled={!topicId}>
+            <SelectTrigger aria-invalid={!!fieldErrors.noteId}>
+              <SelectValue placeholder={topicId ? "Select a note…" : "Pick a topic first"} />
+            </SelectTrigger>
+            <SelectContent>
+              {notes?.map((n) => (
+                <SelectItem key={n.id} value={n.id}>{n.title}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           {topicId && notes && notes.length === 0 && (
             <p className="text-xs text-tx-4">This topic has no notes yet.</p>
           )}

@@ -4,6 +4,13 @@ import { ArrowLeft, Plus, Sparkles, Trash2 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 import {
   useDeleteInsightMutation,
@@ -145,26 +152,28 @@ export function ReviewDetailPage() {
                 <span className="min-w-0 flex-1 truncate text-sm">
                   {insight.note?.title ?? "Linked note"}
                 </span>
-                <select
+                <Select
                   value={insight.status ?? "PENDING"}
-                  onChange={(e) =>
+                  onValueChange={(v) =>
                     updateInsight({
                       insightId: insight.id,
                       reviewId,
-                      data: { status: e.target.value as InsightStatus },
+                      data: { status: v as InsightStatus },
                     })
                   }
-                  className={cn(
-                    "bg-transparent text-[11px] font-medium outline-none",
-                    status.tone,
-                  )}
                 >
-                  {INSIGHT_STATUSES.map((s) => (
-                    <option key={s.value} value={s.value}>
-                      {s.label}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className={cn(
+                    "h-auto border-0 bg-transparent px-0 py-0 text-[11px] font-medium shadow-none focus:ring-0 [&>svg]:size-3",
+                    status.tone,
+                  )}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {INSIGHT_STATUSES.map((s) => (
+                      <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <button
                   type="button"
                   onClick={() =>

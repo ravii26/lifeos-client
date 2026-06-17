@@ -14,6 +14,7 @@ import type {
   Topic,
   UpdateNoteRequest,
   UpdateNotebookRequest,
+  UpdateResourceProgressRequest,
   UpdateResourceRequest,
   UpdateTopicRequest,
 } from "./types";
@@ -158,6 +159,22 @@ export const knowledgeApi = api.injectEndpoints({
       ],
     }),
 
+    // B8 — resource progress
+    updateResourceProgress: builder.mutation<
+      Resource,
+      { id: string; data: UpdateResourceProgressRequest }
+    >({
+      query: ({ id, data }) => ({
+        url: `/resources/${id}/progress`,
+        method: "PATCH",
+        data,
+      }),
+      invalidatesTags: (_res, _err, { id }) => [
+        { type: "Resource", id },
+        { type: "Resource", id: "LIST" },
+      ],
+    }),
+
     // ── Notes ───────────────────────────────────────────────
     listNotes: builder.query<
       Note[],
@@ -212,6 +229,7 @@ export const {
   useCreateResourceMutation,
   useUpdateResourceMutation,
   useDeleteResourceMutation,
+  useUpdateResourceProgressMutation,
   useListNotesQuery,
   useCreateNoteMutation,
   useUpdateNoteMutation,
