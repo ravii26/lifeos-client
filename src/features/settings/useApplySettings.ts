@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 
 import { useGetSettingsQuery } from "./settingsApi";
+import type { Vibe } from "./types";
 
 const FONT_MAP: Record<string, string> = {
   mono: "var(--font-mono)",
@@ -24,6 +25,10 @@ function applyAccentHex(hex: string) {
   root.style.setProperty("--acc-glow", `rgba(${ch}, 0.22)`);
 }
 
+function applyVibe(vibe: Vibe) {
+  document.documentElement.dataset.vibe = vibe;
+}
+
 export function useApplySettings() {
   const { data: settings } = useGetSettingsQuery();
 
@@ -36,6 +41,10 @@ export function useApplySettings() {
     if (!settings?.accent) return;
     applyAccentHex(settings.accent);
   }, [settings?.accent]);
+
+  useEffect(() => {
+    applyVibe(settings?.vibe ?? "focused");
+  }, [settings?.vibe]);
 
   return settings;
 }

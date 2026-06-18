@@ -178,6 +178,46 @@
 }
 
 /* ==================================================================
+   Vibe overrides — applied via data-vibe on <html> by useApplySettings.
+   ================================================================== */
+
+[data-vibe="calm"] {
+  --d: 0.92;
+  --r-xs: 8px;
+  --r-sm: 12px;
+  --r-md: 17px;
+  --r-lg: 24px;
+  --r-xl: 32px;
+  --line: rgba(255, 255, 255, 0.048);
+  --line-2: rgba(255, 255, 255, 0.085);
+  --line-3: rgba(255, 255, 255, 0.14);
+  --shadow-1: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-2: 0 10px 44px rgba(0, 0, 0, 0.32);
+  --shadow-pop: 0 28px 80px rgba(0, 0, 0, 0.48);
+}
+[data-vibe="calm"] * { transition-duration: 0.28s !important; }
+[data-vibe="calm"] .rise { animation-duration: 0.6s; }
+
+[data-vibe="focused"] { --d: 1; }
+
+[data-vibe="energetic"] {
+  --d: 1.07;
+  --r-xs: 4px;
+  --r-sm: 5px;
+  --r-md: 8px;
+  --r-lg: 12px;
+  --r-xl: 16px;
+  --line: rgba(255, 255, 255, 0.09);
+  --line-2: rgba(255, 255, 255, 0.16);
+  --line-3: rgba(255, 255, 255, 0.26);
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-2: 0 6px 22px rgba(0, 0, 0, 0.58);
+  --shadow-pop: 0 20px 60px rgba(0, 0, 0, 0.72);
+}
+[data-vibe="energetic"] * { transition-duration: 0.07s !important; }
+[data-vibe="energetic"] .rise { animation-duration: 0.22s; }
+
+/* ==================================================================
    Keyframe animations.
    ================================================================== */
 @keyframes breathe {

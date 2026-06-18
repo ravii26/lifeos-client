@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useListAreasQuery } from "@/features/areas/areasApi";
+import { useVibeConfig } from "@/features/settings/useVibe";
 
 import {
   useCompleteTaskMutation,
@@ -29,6 +30,7 @@ const PRIORITY_RANK: Record<string, number> = {
 export function TasksPage() {
   const { data: tasks, isLoading, isError } = useListTasksQuery();
   const { data: areas } = useListAreasQuery();
+  const cfg = useVibeConfig();
   const [showForm, setShowForm] = useState(false);
   const [draft, setDraft] = useState("");
   const [draftArea, setDraftArea] = useState("");
@@ -91,14 +93,16 @@ export function TasksPage() {
         </button>
       </div>
 
-      {/* Stat row */}
-      <div className="mb-[var(--gap)] grid grid-cols-2 gap-[var(--gap)] sm:grid-cols-4">
-        {stats.map((x) => (
-          <div key={x.label} className="card card-pad">
-            <Stat num={x.num} label={x.label} color={x.color} />
-          </div>
-        ))}
-      </div>
+      {/* Stat row — hidden on calm to drop the count pressure */}
+      {cfg.showStatBadges && (
+        <div className="mb-[var(--gap)] grid grid-cols-2 gap-[var(--gap)] sm:grid-cols-4">
+          {stats.map((x) => (
+            <div key={x.label} className="card card-pad">
+              <Stat num={x.num} label={x.label} color={x.color} />
+            </div>
+          ))}
+        </div>
+      )}
 
       {showForm && (
         <div className="mb-[var(--gap)]">

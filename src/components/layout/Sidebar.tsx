@@ -18,6 +18,7 @@ import {
 
 import { cn } from "@/lib/utils";
 import { useListTasksQuery } from "@/features/tasks/tasksApi";
+import { useVibeConfig } from "@/features/settings/useVibe";
 
 type NavItem = { label: string; to: string; icon: LucideIcon; end?: boolean };
 type NavGroup = { title: string; items: NavItem[] };
@@ -73,10 +74,12 @@ interface SidebarProps {
 export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   // Live count badge for open tasks (shared RTK cache — no extra fetch cost).
   const { data: tasks } = useListTasksQuery();
+  const cfg = useVibeConfig();
   const openTasks = (tasks ?? []).filter(
     (t) => t.status === "TODO" || t.status === "IN_PROGRESS",
   ).length;
-  const badges: Record<string, number> = { "/tasks": openTasks };
+  // calm hides nav counts to keep the sidebar quiet.
+  const badges: Record<string, number> = cfg.showNavCounts ? { "/tasks": openTasks } : {};
 
   return (
     <aside

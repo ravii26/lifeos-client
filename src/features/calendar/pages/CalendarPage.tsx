@@ -44,9 +44,19 @@ export function CalendarPage() {
 
   const { data: areas } = useListAreasQuery();
   const { data: blocks } = useListCalendarQuery({ from, to });
-  const { data: focusSessions } = useListFocusQuery({ from, to });
+  // /focus has no date filter — fetch all and scope to the selected day client-side.
+  const { data: allFocus } = useListFocusQuery();
   const [deleteBlock] = useDeleteCalendarMutation();
   const focus = useActiveFocus();
+
+  const focusSessions = useMemo(
+    () =>
+      (allFocus ?? []).filter((f) => {
+        const t = new Date(f.startedAt).getTime();
+        return t >= new Date(from).getTime() && t <= new Date(to).getTime();
+      }),
+    [allFocus, from, to],
+  );
 
   const areaById = useMemo(
     () => new Map((areas ?? []).map((a) => [a.id, a])),
@@ -62,8 +72,12 @@ export function CalendarPage() {
       lo = Math.min(lo, Math.floor(hourFrac(b.startTime)));
       hi = Math.max(hi, Math.ceil(hourFrac(b.endTime)));
     }
+    for (const f of focusSessions) {
+      lo = Math.min(lo, Math.floor(hourFrac(f.startedAt)));
+      hi = Math.max(hi, Math.ceil(hourFrac(f.endedAt ?? f.startedAt)));
+    }
     return [lo, hi];
-  }, [dayBlocks]);
+  }, [dayBlocks, focusSessions]);
   const hours = Array.from({ length: maxHour - minHour }, (_, i) => minHour + i);
 
   const isToday = dayKey(day) === dayKey(new Date());
@@ -177,7 +191,16 @@ export function CalendarPage() {
       <div className="grid gap-[var(--gap)] lg:grid-cols-[1fr_320px] lg:items-start">
         {/* Timeline */}
         <div className="card card-pad">
-          <div className="eyebrow mb-3.5">Timeline · Today</div>
+          <div className="mb-3.5 flex items-center justify-between">
+            <div className="eyebrow">Timeline · Today</div>
+            <div className="flex items-center gap-1.5 text-[11px] text-tx-3">
+              <span
+                className="h-2.5 w-[5px] rounded-full"
+                style={{ background: "var(--ok)" }}
+              />
+              Tracked focus
+            </div>
+          </div>
           <div className="relative">
             {hours.map((h) => (
               <div
@@ -229,6 +252,28 @@ export function CalendarPage() {
                             {clock(b.startTime)}–{clock(b.endTime)}
                           </div>
                         </div>
+                      );
+                    })}
+                  {/* Actual tracked focus — green bar in the right margin */}
+                  {focusSessions
+                    .filter((f) => Math.floor(hourFrac(f.startedAt)) === h)
+                    .map((f) => {
+                      const sf = hourFrac(f.startedAt);
+                      const end = f.endedAt ?? new Date().toISOString();
+                      const ef = hourFrac(end);
+                      const mins =
+                        f.durationMinutes ?? Math.round((ef - sf) * 60);
+                      return (
+                        <div
+                          key={f.id}
+                          className="absolute right-0 w-[5px] rounded-full"
+                          title={`Focused ${mins}m · ${clock(f.startedAt)}–${clock(end)}`}
+                          style={{
+                            top: (sf - h) * HPX + 3,
+                            height: Math.max(6, (ef - sf) * HPX - 6),
+                            background: "var(--ok)",
+                          }}
+                        />
                       );
                     })}
                 </div>

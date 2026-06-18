@@ -4,6 +4,7 @@ import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Stat } from "@/components/ui/Stat";
 import { useListAreasQuery } from "@/features/areas/areasApi";
+import { useVibeConfig } from "@/features/settings/useVibe";
 
 import { useListHabitsQuery } from "../habitsApi";
 import { HabitCard } from "../components/HabitCard";
@@ -15,6 +16,7 @@ type Status = { done: boolean; streak: number };
 export function HabitsPage() {
   const { data: habits, isLoading, isError } = useListHabitsQuery();
   const { data: areas } = useListAreasQuery();
+  const cfg = useVibeConfig();
   const [showForm, setShowForm] = useState(false);
   const [filter, setFilter] = useState<Filter>("active");
   const [statuses, setStatuses] = useState<Record<string, Status>>({});
@@ -81,13 +83,15 @@ export function HabitsPage() {
         </button>
       </div>
 
-      <div className="mb-[var(--gap)] grid grid-cols-2 gap-[var(--gap)] sm:grid-cols-4">
-        {stats.map((x) => (
-          <div key={x.label} className="card card-pad">
-            <Stat num={x.num} label={x.label} color={x.color} />
-          </div>
-        ))}
-      </div>
+      {cfg.showStatBadges && (
+        <div className="mb-[var(--gap)] grid grid-cols-2 gap-[var(--gap)] sm:grid-cols-4">
+          {stats.map((x) => (
+            <div key={x.label} className="card card-pad">
+              <Stat num={x.num} label={x.label} color={x.color} />
+            </div>
+          ))}
+        </div>
+      )}
 
       {showForm && (
         <div className="mb-[var(--gap)]">

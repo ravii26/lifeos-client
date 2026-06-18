@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AlertTriangle, ArrowRight, Check, Play, Zap } from "lucide-react";
 import { toast } from "sonner";
@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { selectCurrentUser } from "@/features/auth/authSlice";
 import { useAppSelector } from "@/store/hooks";
 import { useGetSettingsQuery } from "@/features/settings/settingsApi";
+import { useVibe, useVibeConfig } from "@/features/settings/useVibe";
 import { Donut } from "@/components/charts/Donut";
 import { Sparkline } from "@/components/charts/Sparkline";
 import { useListAreasQuery } from "@/features/areas/areasApi";
@@ -40,6 +41,9 @@ export function DashboardPage() {
   const focus = useActiveFocus();
   const navigate = useNavigate();
   const { data: settings } = useGetSettingsQuery();
+  const vibe = useVibe();
+  const cfg = useVibeConfig();
+  const [showAllTasks, setShowAllTasks] = useState(false);
 
   // On first render after settings load, honour the user's startTab preference.
   useEffect(() => {
@@ -130,7 +134,7 @@ export function DashboardPage() {
             {openTasks.length > 0 ? (
               <>
                 You're {doneToday}/{doneToday + openTasks.length} through today
-                {weakest && (
+                {weakest && cfg.showPressureCopy && (
                   <>
                     {" · weakest area is "}
                     <span style={{ color: weakest.area.color }}>
@@ -154,6 +158,24 @@ export function DashboardPage() {
           <Play className="size-3.5" /> Start focus session
         </button>
       </div>
+
+      {/* Vibe banner */}
+      {vibe === "calm" && (
+        <div className="mb-5 rounded-[var(--r-md)] border border-line bg-surface-1 px-4 py-3 text-[13px] text-tx-3">
+          <span className="font-semibold text-tx">Calm mode.</span> Take it one step at a time. No pressure — just progress.
+        </div>
+      )}
+      {vibe === "energetic" && (
+        <div
+          className="mb-5 rounded-[var(--r-md)] px-4 py-3 text-[13px] font-semibold text-tx"
+          style={{ background: "var(--acc-soft)", border: "1px solid var(--acc-line)" }}
+        >
+          ⚡ Energetic mode.{" "}
+          {openTasks.length > 0
+            ? `${openTasks.length} task${openTasks.length !== 1 ? "s" : ""} to crush today. Let's go.`
+            : "All clear — capture something new and keep the momentum."}
+        </div>
+      )}
 
       {/* Hero row: Next action + Focus timer */}
       <div className="grid gap-[var(--gap)] lg:grid-cols-[1.45fr_1fr] lg:items-stretch">
@@ -253,12 +275,12 @@ export function DashboardPage() {
                     key={a.id}
                     to="/areas"
                     className="relative flex flex-col items-center gap-2 rounded-[var(--r-md)] border border-line bg-surface-2 px-3 py-3.5 transition-colors hover:border-line-2"
-                    style={st.score < 40 ? { borderColor: "rgba(255,107,129,0.35)", background: "rgba(255,107,129,0.04)" } : undefined}
+                    style={cfg.showAlerts && st.score < 40 ? { borderColor: "rgba(255,107,129,0.35)", background: "rgba(255,107,129,0.04)" } : undefined}
                   >
-                    {st.score < 40 && (
+                    {cfg.showAlerts && st.score < 40 && (
                       <AlertTriangle className="absolute top-2 right-2 size-3 text-[#ff6b81]" />
                     )}
-                    <Donut value={st.score} size={74} stroke={7} color={st.score < 40 ? "#ff6b81" : a.color}>
+                    <Donut value={st.score} size={74} stroke={7} color={cfg.showAlerts && st.score < 40 ? "#ff6b81" : a.color}>
                       <span className="font-mono text-[19px] font-semibold">
                         {st.score}
                       </span>
@@ -284,7 +306,7 @@ export function DashboardPage() {
         </div>
 
         <div className="flex flex-col gap-[var(--gap)]">
-          {weakest && (
+          {weakest && cfg.showAlerts && (
             <div
               className="card card-pad"
               style={{
@@ -345,15 +367,34 @@ export function DashboardPage() {
             cta="All tasks"
           />
           {openTasks.length > 0 ? (
-            <div className="flex flex-col gap-2">
-              {openTasks.slice(0, 6).map((t) => (
-                <TaskRow
-                  key={t.id}
-                  task={t}
-                  area={t.areaId ? areaById.get(t.areaId) : undefined}
-                />
-              ))}
-            </div>
+            (() => {
+              // calm caps the list short (cfg.taskLimit); the dashboard otherwise
+              // shows up to 6. "Show more" reveals the rest without losing data.
+              const baseLimit = cfg.taskLimit ?? 6;
+              const limit = showAllTasks ? openTasks.length : baseLimit;
+              const shown = openTasks.slice(0, limit);
+              const remaining = openTasks.length - shown.length;
+              return (
+                <div className="flex flex-col gap-2">
+                  {shown.map((t) => (
+                    <TaskRow
+                      key={t.id}
+                      task={t}
+                      area={t.areaId ? areaById.get(t.areaId) : undefined}
+                    />
+                  ))}
+                  {remaining > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllTasks(true)}
+                      className="mt-1 self-start text-xs text-tx-3 hover:text-tx"
+                    >
+                      Show {remaining} more
+                    </button>
+                  )}
+                </div>
+              );
+            })()
           ) : (
             <p className="text-sm text-tx-4">
               No open tasks.{" "}

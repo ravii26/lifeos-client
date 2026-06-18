@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { Area } from "@/features/areas/types";
 import { HabitDots } from "@/components/charts/HabitDots";
+import { useVibeConfig } from "@/features/settings/useVibe";
 
 import {
   useDeleteHabitMutation,
@@ -78,6 +79,7 @@ export function HabitCard({
     onStatus?.(habit.id, { done: todayDone, streak });
   }, [habit.id, todayDone, streak, onStatus]);
 
+  const cfg = useVibeConfig();
   const color = area?.color ?? "var(--acc)";
   const target =
     habit.habitType === "COUNT"
@@ -126,15 +128,20 @@ export function HabitCard({
             <div className="mt-0.5 font-mono text-[11px] text-tx-3">{sub}</div>
           </div>
         </div>
-        <span
-          className="chip shrink-0"
-          style={{
-            color: streak > 0 ? "var(--acc)" : "var(--tx-3)",
-            borderColor: streak > 0 ? "var(--acc-line)" : "var(--line)",
-          }}
-        >
-          <Flame className="size-[11px]" /> {streak}
-        </span>
+        {cfg.showStreaks && (
+          <span
+            className="chip shrink-0"
+            style={{
+              color: streak > 0 ? "var(--acc)" : "var(--tx-3)",
+              borderColor: streak > 0 ? "var(--acc-line)" : "var(--line)",
+              ...(cfg.emphasize && streak > 0
+                ? { boxShadow: "0 0 10px var(--acc-glow)", fontWeight: 700 }
+                : {}),
+            }}
+          >
+            <Flame className={cn("size-[11px]", cfg.emphasize && streak > 0 && "size-3")} /> {streak}
+          </span>
+        )}
       </div>
 
       <div className="my-1 mb-3.5">
