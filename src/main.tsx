@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { Provider } from 'react-redux'
 import { Toaster } from 'sonner'
+import { ConfirmHost } from '@/components/ui/confirm'
 import '@fontsource-variable/hanken-grotesk'
 import '@fontsource-variable/jetbrains-mono'
 import './index.css'
@@ -30,6 +31,7 @@ createRoot(document.getElementById('root')!).render(
           },
         }}
       />
+      <ConfirmHost />
     </Provider>
   </StrictMode>,
 )

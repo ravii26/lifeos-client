@@ -1,90 +1,188 @@
+import { useState } from "react";
 import { ExternalLink, Heart, Sparkles, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { useDeleteVaultMutation, useMarkVaultUsedMutation } from "../vaultApi";
-import { VAULT_TYPE_BY_VALUE } from "../constants";
+import { MEDIA_TYPE_BY_VALUE, VAULT_TYPE_BY_VALUE } from "../constants";
 import type { VaultItem } from "../types";
+import { VaultDetailDialog } from "./VaultDetailDialog";
+
+function timeAgo(iso?: string): string | null {
+  if (!iso) return null;
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return null;
+  const secs = Math.round((Date.now() - then) / 1000);
+  const units: [number, string][] = [
+    [60, "s"],
+    [60, "m"],
+    [24, "h"],
+    [7, "d"],
+    [4.345, "w"],
+    [12, "mo"],
+    [Number.POSITIVE_INFINITY, "y"],
+  ];
+  let val = secs;
+  let unit = "s";
+  for (const [step, label] of units) {
+    if (Math.abs(val) < step) {
+      unit = label;
+      break;
+    }
+    val = Math.round(val / step);
+    unit = label;
+  }
+  return val <= 0 ? "now" : `${val}${unit} ago`;
+}
 
 export function VaultCard({ item }: { item: VaultItem }) {
+  const [open, setOpen] = useState(false);
   const [deleteVault, { isLoading: deleting }] = useDeleteVaultMutation();
   const [markUsed, { isLoading: pulling }] = useMarkVaultUsedMutation();
   const meta = VAULT_TYPE_BY_VALUE[item.vaultType];
+  const media = item.mediaType ? MEDIA_TYPE_BY_VALUE[item.mediaType] : null;
+  const MediaIcon = media?.icon;
+  const added = timeAgo(item.createdAt);
+
+  const handlePull = async () => {
+    try {
+      await markUsed(item.id).unwrap();
+      toast(`"${item.title}" pulled from vault`, { icon: "✨" });
+    } catch {
+      toast.error("Couldn't pull that item. Try again.");
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await deleteVault(item.id).unwrap();
+      toast(`"${item.title}" removed from vault`);
+    } catch {
+      toast.error("Couldn't delete that item. Try again.");
+    }
+  };
+
+  // Stop the card's open-on-click when an inner control is used.
+  const stop =
+    (fn?: () => void) => (e: React.MouseEvent) => {
+      e.stopPropagation();
+      fn?.();
+    };
 
   return (
+    <>
     <div
-      className="card card-pad group flex flex-col overflow-hidden"
+      role="button"
+      tabIndex={0}
+      onClick={() => setOpen(true)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          setOpen(true);
+        }
+      }}
+      aria-label={`Open "${item.title}"`}
+      className="card card-pad group relative flex cursor-pointer flex-col overflow-hidden transition duration-200 hover:-translate-y-0.5 hover:border-line-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acc-line"
       style={{ borderLeft: `3px solid ${meta.accent}` }}
     >
-      <div className="mb-2.5 flex items-center justify-between">
+      {/* soft type-tinted glow on hover */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+        style={{
+          background: `radial-gradient(120% 80% at 0% 0%, ${meta.accent}12, transparent 60%)`,
+        }}
+      />
+
+      <div className="relative mb-2.5 flex items-center justify-between gap-2">
         <span
           className="chip border-transparent"
           style={{ color: meta.accent, background: `${meta.accent}1a` }}
         >
+          <meta.icon className="size-3" />
           {meta.label}
         </span>
-        <div className="flex items-center gap-2">
-          {item.usedCount != null && (
+        <div className="flex items-center gap-2.5">
+          {MediaIcon && (
+            <span
+              className="flex items-center gap-1 text-[10px] text-tx-4"
+              title={media?.label}
+            >
+              <MediaIcon className="size-3" />
+            </span>
+          )}
+          {item.usedCount != null && item.usedCount > 0 && (
             <span className="font-mono text-[10px] text-tx-4">
-              used {item.usedCount}×
+              pulled {item.usedCount}×
             </span>
           )}
           <button
             type="button"
-            onClick={() => deleteVault(item.id)}
+            onClick={stop(handleDelete)}
             disabled={deleting}
             title="Delete"
-            className="text-tx-4 opacity-0 transition hover:text-danger group-hover:opacity-100 disabled:opacity-50"
+            aria-label="Delete item"
+            className="text-tx-4 opacity-0 transition hover:text-danger focus-visible:opacity-100 group-hover:opacity-100 disabled:opacity-50"
           >
             <Trash2 className="size-3.5" />
           </button>
         </div>
       </div>
 
-      <div className="mb-1.5 text-[14.5px] font-[650]">{item.title}</div>
-      <p className="m-0 mb-3.5 flex-1 text-[13px] leading-relaxed whitespace-pre-wrap text-tx-2">
+      <div className="relative mb-1.5 text-[14.5px] font-[650] leading-snug">
+        {item.title}
+      </div>
+      <p className="relative m-0 mb-3.5 flex-1 text-[13px] leading-relaxed whitespace-pre-wrap text-tx-2">
         {item.content}
       </p>
 
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex flex-wrap gap-1.5">
+      {(item.triggerTags ?? []).length > 0 && (
+        <div className="relative mb-3 flex flex-wrap gap-1.5">
           {(item.triggerTags ?? []).map((t) => (
             <span key={t} className="chip text-[10px]">
               {t}
             </span>
           ))}
         </div>
-        <div className="flex items-center gap-2 text-tx-4">
-          {item.helpfulCount != null && (
+      )}
+
+      <div className="relative flex items-center justify-between gap-2 border-t border-line pt-3">
+        <div className="flex items-center gap-2.5 text-tx-4">
+          {added && <span className="text-[11px]">{added}</span>}
+          {item.helpfulCount != null && item.helpfulCount > 0 && (
             <span className="flex items-center gap-1 text-[11px]">
               <Heart className="size-3" /> {item.helpfulCount}
             </span>
           )}
+        </div>
+        <div className="flex items-center gap-2">
           {item.url && (
             <a
               href={item.url}
               target="_blank"
               rel="noreferrer"
-              className="hover:text-primary"
-              title="Open"
+              onClick={(e) => e.stopPropagation()}
+              className="icon-btn !h-7 !w-7"
+              title="Open link"
+              aria-label="Open link"
             >
               <ExternalLink className="size-3.5" />
             </a>
           )}
           <button
             type="button"
-            onClick={async () => {
-              await markUsed(item.id);
-              toast(`"${item.title}" pulled from vault`, { icon: "✨" });
-            }}
+            onClick={stop(handlePull)}
             disabled={pulling}
             title="Pull from vault"
-            className="flex items-center gap-1 text-[11px] hover:text-tx disabled:opacity-50"
+            className="ds-btn sm gap-1.5 transition group-hover:border-line-3 disabled:opacity-50"
           >
-            <Sparkles className="size-3" />
-            Pull
+            <Sparkles className="size-3.5" style={{ color: meta.accent }} />
+            {pulling ? "Pulling…" : "Pull"}
           </button>
         </div>
       </div>
     </div>
+
+    {open && <VaultDetailDialog item={item} onClose={() => setOpen(false)} />}
+    </>
   );
 }

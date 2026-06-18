@@ -2,6 +2,7 @@ import { createElement } from "react";
 import { AlertTriangle, Trash2 } from "lucide-react";
 
 import { Donut } from "@/components/charts/Donut";
+import { confirm } from "@/components/ui/confirm";
 import { areaIcon } from "../constants";
 import { useDeleteAreaMutation } from "../areasApi";
 import type { Area } from "../types";
@@ -33,15 +34,16 @@ export function AreaCard({ area, stats }: { area: Area; stats: AreaStats }) {
   const cfg = useVibeConfig();
   const showWarning = cfg.showAlerts && stats.score < 40;
 
-  const handleDelete = (e: React.MouseEvent) => {
+  const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (
-      confirm(
-        `Delete "${area.name}"?\n\nThis permanently deletes every goal, project, task, habit, and topic in this area. This can't be undone.`,
-      )
-    ) {
-      deleteArea(area.id);
-    }
+    const ok = await confirm({
+      title: `Delete "${area.name}"?`,
+      description:
+        "This permanently deletes every goal, project, task, habit, and topic in this area. This can't be undone.",
+      confirmText: "Delete",
+      danger: true,
+    });
+    if (ok) deleteArea(area.id);
   };
 
   return (

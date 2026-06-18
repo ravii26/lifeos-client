@@ -1,8 +1,12 @@
 import { api } from "@/store/api";
 import type {
   CalendarBlock,
+  CalendarBlockException,
   CreateCalendarRequest,
+  SplitSeriesRequest,
+  SplitSeriesResponse,
   UpdateCalendarRequest,
+  UpsertExceptionRequest,
 } from "./types";
 
 type CalendarFilters = {
@@ -52,12 +56,60 @@ export const calendarApi = api.injectEndpoints({
       ],
     }),
 
+    // Deletes the whole series + cascades its exceptions.
     deleteCalendar: builder.mutation<void, string>({
       query: (id) => ({ url: `/calendar/${id}`, method: "DELETE" }),
       invalidatesTags: (_res, _err, id) => [
         { type: "Calendar", id },
         { type: "Calendar", id: "LIST" },
       ],
+    }),
+
+    // Override or skip ONE occurrence — "This event". `id` is the series' real id
+    // (a block's `recurringBlockId`). Occurrence ids are synthetic, so we
+    // re-fetch the whole range rather than try to patch a single cached item.
+    upsertCalendarException: builder.mutation<
+      CalendarBlockException,
+      { id: string; data: UpsertExceptionRequest }
+    >({
+      query: ({ id, data }) => ({
+        url: `/calendar/${id}/exceptions`,
+        method: "PUT",
+        data,
+      }),
+      invalidatesTags: (_res, _err, { id }) => [
+        { type: "Calendar", id },
+        { type: "Calendar", id: "LIST" },
+      ],
+    }),
+
+    // Revert one occurrence to the series default.
+    deleteCalendarException: builder.mutation<
+      void,
+      { id: string; occurrenceDate: string }
+    >({
+      query: ({ id, occurrenceDate }) => ({
+        url: `/calendar/${id}/exceptions`,
+        method: "DELETE",
+        params: { occurrenceDate },
+      }),
+      invalidatesTags: (_res, _err, { id }) => [
+        { type: "Calendar", id },
+        { type: "Calendar", id: "LIST" },
+      ],
+    }),
+
+    // Split a series — "This and following". `id` is the series' real id.
+    splitCalendarSeries: builder.mutation<
+      SplitSeriesResponse,
+      { id: string; data: SplitSeriesRequest }
+    >({
+      query: ({ id, data }) => ({
+        url: `/calendar/${id}/split`,
+        method: "POST",
+        data,
+      }),
+      invalidatesTags: [{ type: "Calendar", id: "LIST" }],
     }),
   }),
 });
@@ -67,4 +119,7 @@ export const {
   useCreateCalendarMutation,
   useUpdateCalendarMutation,
   useDeleteCalendarMutation,
+  useUpsertCalendarExceptionMutation,
+  useDeleteCalendarExceptionMutation,
+  useSplitCalendarSeriesMutation,
 } = calendarApi;

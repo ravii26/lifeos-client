@@ -1,13 +1,15 @@
 import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Pause, Play, Plus, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pause, Play, Plus, Repeat } from "lucide-react";
 
 import { Stat } from "@/components/ui/Stat";
 import { useListAreasQuery } from "@/features/areas/areasApi";
 import { useActiveFocus } from "@/features/focus/useActiveFocus";
 import { useListFocusQuery } from "@/features/focus/focusApi";
 
-import { useDeleteCalendarMutation, useListCalendarQuery } from "../calendarApi";
+import { useListCalendarQuery } from "../calendarApi";
 import { NewBlockForm } from "../components/NewBlockForm";
+import { EditBlockDialog } from "../components/EditBlockDialog";
+import { type CalendarBlock, isOccurrence } from "../types";
 
 const HPX = 56; // pixels per hour row
 
@@ -40,13 +42,13 @@ function clock(iso: string): string {
 export function CalendarPage() {
   const [day, setDay] = useState(() => new Date());
   const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState<CalendarBlock | null>(null);
   const { from, to } = dayBounds(day);
 
   const { data: areas } = useListAreasQuery();
   const { data: blocks } = useListCalendarQuery({ from, to });
   // /focus has no date filter — fetch all and scope to the selected day client-side.
   const { data: allFocus } = useListFocusQuery();
-  const [deleteBlock] = useDeleteCalendarMutation();
   const focus = useActiveFocus();
 
   const focusSessions = useMemo(
@@ -222,15 +224,18 @@ export function CalendarPage() {
                       const sf = hourFrac(b.startTime);
                       const ef = hourFrac(b.endTime);
                       return (
-                        <div
+                        <button
                           key={b.id}
-                          className="group absolute right-2 left-0 rounded-lg px-2.5 py-1.5"
+                          type="button"
+                          onClick={() => setEditing(b)}
+                          className="group absolute right-2 left-0 rounded-lg px-2.5 py-1.5 text-left transition hover:brightness-125"
                           style={{
                             top: (sf - h) * HPX + 3,
                             height: Math.max(20, (ef - sf) * HPX - 6),
                             background: `${color}1a`,
                             borderLeft: `2.5px solid ${color}`,
                           }}
+                          title="Edit block"
                         >
                           <div className="flex items-start justify-between gap-2">
                             <div
@@ -239,19 +244,17 @@ export function CalendarPage() {
                             >
                               {b.title}
                             </div>
-                            <button
-                              type="button"
-                              onClick={() => deleteBlock(b.id)}
-                              className="shrink-0 text-tx-4 opacity-0 transition hover:text-danger group-hover:opacity-100"
-                              title="Delete block"
-                            >
-                              <Trash2 className="size-3" />
-                            </button>
+                            {isOccurrence(b) && (
+                              <Repeat
+                                className="size-3 shrink-0"
+                                style={{ color }}
+                              />
+                            )}
                           </div>
                           <div className="font-mono text-[10px] text-tx-3">
                             {clock(b.startTime)}–{clock(b.endTime)}
                           </div>
-                        </div>
+                        </button>
                       );
                     })}
                   {/* Actual tracked focus — green bar in the right margin */}
@@ -360,6 +363,14 @@ export function CalendarPage() {
           </div>
         </div>
       </div>
+
+      {editing && (
+        <EditBlockDialog
+          block={editing}
+          areas={areas ?? []}
+          onClose={() => setEditing(null)}
+        />
+      )}
     </div>
   );
 }

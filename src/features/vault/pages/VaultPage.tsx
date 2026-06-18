@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Shield, Sparkles, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Stat } from "@/components/ui/Stat";
@@ -46,9 +46,17 @@ export function VaultPage() {
         <button
           type="button"
           onClick={() => setShowForm((v) => !v)}
-          className="ds-btn ghost"
+          className={cn("ds-btn", showForm ? "ghost" : "acc")}
         >
-          <Plus className="size-3.5" /> Add item
+          {showForm ? (
+            <>
+              <X className="size-3.5" /> Close
+            </>
+          ) : (
+            <>
+              <Plus className="size-3.5" /> Add item
+            </>
+          )}
         </button>
       </div>
 
@@ -72,7 +80,7 @@ export function VaultPage() {
           <button
             key={v.value}
             type="button"
-            className={cn("tag-toggle", filter === v.value && "on")}
+            className={cn("tag-toggle inline-flex items-center gap-1.5", filter === v.value && "on")}
             onClick={() => setFilter(v.value)}
             style={
               filter === v.value
@@ -80,6 +88,7 @@ export function VaultPage() {
                 : undefined
             }
           >
+            <v.icon className="size-3" />
             {v.label}
           </button>
         ))}
@@ -91,11 +100,24 @@ export function VaultPage() {
         </div>
       )}
 
-      {isLoading && <p className="text-sm text-tx-3">Loading vault…</p>}
+      {isLoading && (
+        <div className="grid gap-[var(--gap)] sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="card card-pad animate-pulse">
+              <div className="mb-3 h-4 w-24 rounded bg-surface-3" />
+              <div className="mb-2 h-3.5 w-3/4 rounded bg-surface-3" />
+              <div className="mb-1.5 h-3 w-full rounded bg-surface-2" />
+              <div className="mb-4 h-3 w-5/6 rounded bg-surface-2" />
+              <div className="h-7 w-full rounded bg-surface-2" />
+            </div>
+          ))}
+        </div>
+      )}
+
       {isError && (
-        <p className="text-sm text-danger">
+        <div className="card card-pad empty !text-danger">
           Couldn't load your vault. Is the backend running?
-        </p>
+        </div>
       )}
 
       {all.length > 0 && (
@@ -107,10 +129,22 @@ export function VaultPage() {
       )}
 
       {items && all.length === 0 && !showForm && (
-        <div className="card card-pad empty">
-          {filter
-            ? "Nothing here yet for this type."
-            : "Your vault is empty — save what you'll want to revisit on the hard days."}
+        <div className="card card-pad flex flex-col items-center gap-3 py-14 text-center">
+          <div className="grid size-12 place-items-center rounded-full bg-acc-soft text-acc">
+            {filter ? <Sparkles className="size-5" /> : <Shield className="size-5" />}
+          </div>
+          <div className="max-w-sm text-sm text-tx-3">
+            {filter
+              ? "Nothing here yet for this type. Add something to pull from later."
+              : "Your vault is empty — save what you'll want to revisit on the hard days."}
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowForm(true)}
+            className="ds-btn acc mt-1"
+          >
+            <Plus className="size-3.5" /> Add your first item
+          </button>
         </div>
       )}
     </div>

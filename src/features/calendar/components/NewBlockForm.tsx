@@ -16,6 +16,8 @@ import { parseApiErrors, type FieldErrorMap } from "@/lib/api/formErrors";
 import type { Area } from "@/features/areas/types";
 
 import { useCreateCalendarMutation } from "../calendarApi";
+import { buildRule, NO_RECURRENCE, type RecurrenceState } from "../recurrence";
+import { RecurrencePicker } from "./RecurrencePicker";
 
 function toIso(date: string, time: string): string {
   return new Date(`${date}T${time}`).toISOString();
@@ -36,6 +38,7 @@ export function NewBlockForm({
   const [blockType, setBlockType] = useState("FOCUS");
   const [areaId, setAreaId] = useState("");
   const [notes, setNotes] = useState("");
+  const [recurrence, setRecurrence] = useState<RecurrenceState>(NO_RECURRENCE);
   const [fieldErrors, setFieldErrors] = useState<FieldErrorMap>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [createBlock, { isLoading }] = useCreateCalendarMutation();
@@ -59,6 +62,9 @@ export function NewBlockForm({
         blockType: blockType.trim() || "FOCUS",
         ...(areaId ? { areaId } : {}),
         ...(notes.trim() ? { notes: notes.trim() } : {}),
+        ...(buildRule(recurrence)
+          ? { recurrenceRule: buildRule(recurrence) }
+          : {}),
       }).unwrap();
       onClose();
     } catch (err) {
@@ -143,6 +149,10 @@ export function NewBlockForm({
           rows={2}
           className="w-full resize-y rounded-md border border-input bg-transparent px-3 py-2 text-sm text-tx outline-none placeholder:text-tx-4 focus-visible:border-ring"
         />
+      </div>
+
+      <div className="mt-4">
+        <RecurrencePicker value={recurrence} onChange={setRecurrence} />
       </div>
 
       {formError && <p className="mt-4 text-sm text-danger">{formError}</p>}

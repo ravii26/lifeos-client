@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Plus, Sparkles, Trash2 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { confirm } from "@/components/ui/confirm";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -49,9 +50,13 @@ export function ReviewDetailPage() {
   const [deleteInsight] = useDeleteInsightMutation();
   const [adding, setAdding] = useState(false);
 
-  const handleDeleteReview = () => {
+  const handleDeleteReview = async () => {
     if (!review) return;
-    if (!window.confirm("Delete this review?")) return;
+    if (!(await confirm({
+      title: "Delete this review?",
+      confirmText: "Delete",
+      danger: true,
+    }))) return;
     deleteReview(review.id);
     navigate("/review");
   };

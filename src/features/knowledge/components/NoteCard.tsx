@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Trash2, Tag, ArrowUpRight } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { confirm } from "@/components/ui/confirm";
 import { useDeleteNoteMutation } from "../knowledgeApi";
 import { NOTE_TYPE_BY_VALUE } from "../constants";
 import type { Note, Notebook } from "../types";
@@ -19,10 +20,14 @@ export function NoteCard({
   const typeInfo = note.noteType ? NOTE_TYPE_BY_VALUE[note.noteType] : null;
   const TypeIcon = typeInfo?.icon;
 
-  const handleDelete = (e: React.MouseEvent) => {
+  const handleDelete = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (window.confirm(`Delete note "${note.title}"?`)) deleteNote(note.id);
+    if (await confirm({
+      title: `Delete note "${note.title}"?`,
+      confirmText: "Delete",
+      danger: true,
+    })) deleteNote(note.id);
   };
 
   return (

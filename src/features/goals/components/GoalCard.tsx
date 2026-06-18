@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ChevronDown, Plus, Trash2 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { confirm } from "@/components/ui/confirm";
 import {
   Select,
   SelectContent,
@@ -34,13 +35,14 @@ export function GoalCard({ goal, area }: { goal: Goal; area?: Area }) {
   const priority = goal.priority ? PRIORITY_BY_VALUE[goal.priority] : undefined;
   const projectCount = projects?.length ?? 0;
 
-  const handleDelete = () => {
-    if (
-      !window.confirm(
-        `Delete "${goal.title}"? Its projects will be unlinked or removed.`,
-      )
-    )
-      return;
+  const handleDelete = async () => {
+    const ok = await confirm({
+      title: `Delete "${goal.title}"?`,
+      description: "Its projects will be unlinked or removed.",
+      confirmText: "Delete",
+      danger: true,
+    });
+    if (!ok) return;
     deleteGoal(goal.id);
   };
 

@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Plus, Trash2, BookOpen, FileText, BookMarked } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { confirm } from "@/components/ui/confirm";
 import { useListAreasQuery } from "@/features/areas/areasApi";
 import {
   Select,
@@ -60,9 +61,14 @@ export function TopicDetailPage() {
   const notebookById = new Map((notebooks ?? []).map((n) => [n.id, n]));
   const completedResources = resources?.filter((r) => r.status === "COMPLETED").length ?? 0;
 
-  const handleDeleteTopic = () => {
+  const handleDeleteTopic = async () => {
     if (!topic) return;
-    if (!window.confirm(`Delete "${topic.title}"? This removes all its resources, notebooks, and notes.`)) return;
+    if (!(await confirm({
+      title: `Delete "${topic.title}"?`,
+      description: "This removes all its resources, notebooks, and notes.",
+      confirmText: "Delete",
+      danger: true,
+    }))) return;
     deleteTopic(topic.id);
     navigate("/learn");
   };
