@@ -1,5 +1,5 @@
 import { createElement } from "react";
-import { Trash2 } from "lucide-react";
+import { AlertTriangle, Trash2 } from "lucide-react";
 
 import { Donut } from "@/components/charts/Donut";
 import { areaIcon } from "../constants";
@@ -42,7 +42,10 @@ export function AreaCard({ area, stats }: { area: Area; stats: AreaStats }) {
   };
 
   return (
-    <div className="card card-pad group relative overflow-hidden">
+    <div
+      className="card card-pad group relative overflow-hidden"
+      style={stats.score < 40 ? { borderColor: "rgba(255,107,129,0.35)", background: "rgba(255,107,129,0.03)" } : undefined}
+    >
       <div
         className="absolute inset-x-0 top-0 h-0.5 opacity-80"
         style={{ background: area.color }}
@@ -74,7 +77,12 @@ export function AreaCard({ area, stats }: { area: Area; stats: AreaStats }) {
       </div>
 
       <div className="flex items-center gap-4">
-        <Donut value={stats.score} size={88} stroke={8} color={area.color}>
+        {stats.score < 40 && (
+          <div className="mb-2 flex items-center gap-1.5 rounded-md bg-[rgba(255,107,129,0.1)] px-2 py-1 text-[11px] text-[#ff6b81]">
+            <AlertTriangle className="size-3" /> Needs attention
+          </div>
+        )}
+        <Donut value={stats.score} size={88} stroke={8} color={stats.score < 40 ? "#ff6b81" : area.color}>
           <span className="font-mono text-[23px] font-semibold">
             {stats.score}
           </span>

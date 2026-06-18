@@ -8,6 +8,11 @@ import type {
 
 export const captureApi = api.injectEndpoints({
   endpoints: (builder) => ({
+    getCapture: builder.query<Capture, string>({
+      query: (id) => ({ url: `/captures/${id}`, method: "GET" }),
+      providesTags: (_res, _err, id) => [{ type: "Capture" as const, id }],
+    }),
+
     listCaptures: builder.query<Capture[], { processed?: boolean } | void>({
       query: (params) => ({
         url: "/captures",
@@ -75,6 +80,7 @@ export const captureApi = api.injectEndpoints({
 });
 
 export const {
+  useGetCaptureQuery,
   useListCapturesQuery,
   useCreateCaptureMutation,
   useUpdateCaptureTypeMutation,

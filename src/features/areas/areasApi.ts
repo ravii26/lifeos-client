@@ -1,5 +1,5 @@
 import { api } from "@/store/api";
-import type { Area, AreaScoreSnapshot, CreateAreaRequest, UpdateAreaRequest } from "./types";
+import type { Area, AreaScoreSnapshot, AreaTrendsResult, CreateAreaRequest, UpdateAreaRequest } from "./types";
 
 /**
  * Cache-tag strategy (the key RTK Query concept):
@@ -55,6 +55,11 @@ export const areasApi = api.injectEndpoints({
       }),
       providesTags: (_res, _err, { id }) => [{ type: "AreaSnapshot", id }],
     }),
+
+    getAreaTrends: builder.query<AreaTrendsResult, void>({
+      query: () => ({ url: "/areas/trends", method: "GET" }),
+      providesTags: [{ type: "AreaSnapshot", id: "TRENDS" }],
+    }),
   }),
 });
 
@@ -65,4 +70,5 @@ export const {
   useDeleteAreaMutation,
   useSnapshotAreaScoreMutation,
   useListAreaSnapshotsQuery,
+  useGetAreaTrendsQuery,
 } = areasApi;

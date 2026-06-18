@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, ExternalLink, Trash2 } from "lucide-react";
+import { ChevronDown, ExternalLink, Trash2, Star } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import {
@@ -18,13 +18,9 @@ import {
 import {
   RESOURCE_STATUSES,
   RESOURCE_STATUS_BY_VALUE,
-  RESOURCE_TYPES,
+  RESOURCE_TYPE_BY_VALUE,
 } from "../constants";
 import type { Resource, ResourceStatus } from "../types";
-
-const TYPE_LABEL = Object.fromEntries(
-  RESOURCE_TYPES.map((t) => [t.value, t.label]),
-);
 
 export function ResourceRow({ resource }: { resource: Resource }) {
   const [updateResource] = useUpdateResourceMutation();
@@ -38,6 +34,13 @@ export function ResourceRow({ resource }: { resource: Resource }) {
   const status = resource.status
     ? RESOURCE_STATUS_BY_VALUE[resource.status]
     : RESOURCE_STATUS_BY_VALUE.NOT_STARTED;
+  const typeInfo = RESOURCE_TYPE_BY_VALUE[resource.resourceType];
+  const TypeIcon = typeInfo?.icon;
+
+  const pct =
+    resource.totalLessons && resource.totalLessons > 0
+      ? Math.min(100, Math.round(((resource.lessonsCompleted ?? 0) / resource.totalLessons) * 100))
+      : null;
 
   const handleProgressSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,16 +56,15 @@ export function ResourceRow({ resource }: { resource: Resource }) {
     setShowProgress(false);
   };
 
-  const hasProgress =
-    resource.lessonsCompleted != null ||
-    resource.totalLessons != null ||
-    resource.minutesConsumed != null;
-
   return (
-    <div className="rounded-lg border border-line bg-surface-2">
+    <div className={cn("rounded-lg border bg-surface-2 transition-colors", showProgress ? "border-line-2" : "border-line")}>
       <div className="flex items-center gap-3 px-3 py-2.5">
-        <span className={cn("size-2 shrink-0 rounded-full", status.dot)} />
+        {/* Type icon */}
+        <div className="grid size-8 shrink-0 place-items-center rounded-lg bg-surface-3">
+          {TypeIcon && <TypeIcon className="size-4 text-tx-3" />}
+        </div>
 
+        {/* Main info */}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
             <span className="truncate text-sm font-medium">{resource.title}</span>
@@ -79,27 +81,50 @@ export function ResourceRow({ resource }: { resource: Resource }) {
             )}
           </div>
           <div className="mt-0.5 flex items-center gap-2 text-[11px] text-tx-3">
-            <span>{TYPE_LABEL[resource.resourceType]}</span>
+            <span>{typeInfo?.label ?? resource.resourceType}</span>
             {resource.platform && <span>· {resource.platform}</span>}
-            {hasProgress && (
-              <span className="text-acc">
-                {resource.lessonsCompleted ?? 0}/{resource.totalLessons ?? "?"} lessons
-                {resource.minutesConsumed ? ` · ${resource.minutesConsumed}m` : ""}
+            {resource.rating != null && (
+              <span className="flex items-center gap-0.5 text-warn">
+                <Star className="size-3 fill-current" />
+                {resource.rating}
               </span>
             )}
+            {resource.minutesConsumed != null && !resource.totalLessons && (
+              <span className="text-acc">{resource.minutesConsumed}m</span>
+            )}
           </div>
+
+          {/* Progress bar */}
+          {pct !== null && (
+            <div className="mt-1.5 flex items-center gap-2">
+              <div className="h-1 flex-1 overflow-hidden rounded-full bg-surface-3">
+                <div
+                  className={cn("h-full rounded-full transition-all", pct >= 100 ? "bg-ok" : "bg-acc")}
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+              <span className="shrink-0 font-mono text-[10px] text-tx-4">
+                {resource.lessonsCompleted ?? 0}/{resource.totalLessons} · {pct}%
+              </span>
+            </div>
+          )}
         </div>
 
+        {/* Status select — simple pill */}
         <Select
           value={resource.status ?? "NOT_STARTED"}
           onValueChange={(v) =>
             updateResource({ id: resource.id, data: { status: v as ResourceStatus } })
           }
         >
-          <SelectTrigger className={cn(
-            "h-auto border-0 bg-transparent px-0 py-0 text-[11px] font-medium shadow-none focus:ring-0 [&>svg]:size-3",
-            status.tone,
-          )}>
+          <SelectTrigger
+            className={cn(
+              "h-6 w-auto min-w-0 gap-1 rounded-full border-0 px-2 py-0 text-[11px] font-semibold shadow-none focus:ring-0",
+              status.bg,
+              status.tone,
+            )}
+          >
+            <span className={cn("size-1.5 shrink-0 rounded-full", status.dot)} />
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -109,6 +134,7 @@ export function ResourceRow({ resource }: { resource: Resource }) {
           </SelectContent>
         </Select>
 
+        {/* Progress toggle */}
         <button
           type="button"
           onClick={() => setShowProgress((v) => !v)}
@@ -128,54 +154,53 @@ export function ResourceRow({ resource }: { resource: Resource }) {
           title="Delete resource"
           className="grid size-7 shrink-0 place-items-center rounded-md text-tx-4 transition-colors hover:bg-surface-3 hover:text-danger disabled:opacity-50"
         >
-          <Trash2 className="size-4" />
+          <Trash2 className="size-3.5" />
         </button>
       </div>
 
       {showProgress && (
         <form
           onSubmit={handleProgressSave}
-          className="flex items-end gap-3 border-t border-line px-3 pb-3 pt-2.5"
+          className="flex flex-wrap items-end gap-3 border-t border-line bg-surface-1 px-3 pb-3 pt-2.5"
         >
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] text-tx-4">Lessons done</label>
+            <label className="text-[10px] font-medium uppercase tracking-wide text-tx-4">Lessons done</label>
             <input
               type="number"
               min={0}
               value={lessons}
               onChange={(e) => setLessons(e.target.value)}
               placeholder="0"
-              className="ds-input w-[72px] py-1 text-xs"
+              className="ds-input w-[80px] py-1 text-xs"
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] text-tx-4">Total lessons</label>
+            <label className="text-[10px] font-medium uppercase tracking-wide text-tx-4">Total</label>
             <input
               type="number"
               min={0}
               value={total}
               onChange={(e) => setTotal(e.target.value)}
               placeholder="—"
-              className="ds-input w-[72px] py-1 text-xs"
+              className="ds-input w-[80px] py-1 text-xs"
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] text-tx-4">Minutes</label>
+            <label className="text-[10px] font-medium uppercase tracking-wide text-tx-4">Minutes</label>
             <input
               type="number"
               min={0}
               value={mins}
               onChange={(e) => setMins(e.target.value)}
               placeholder="0"
-              className="ds-input w-[72px] py-1 text-xs"
+              className="ds-input w-[80px] py-1 text-xs"
             />
           </div>
-          <button
-            type="submit"
-            disabled={savingProgress}
-            className="ds-btn sm ml-auto"
-          >
-            {savingProgress ? "Saving…" : "Save"}
+          {pct !== null && (
+            <span className="self-end pb-1 text-[11px] text-tx-3">{pct}% done</span>
+          )}
+          <button type="submit" disabled={savingProgress} className="ds-btn sm ml-auto">
+            {savingProgress ? "Saving…" : "Save progress"}
           </button>
         </form>
       )}

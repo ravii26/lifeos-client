@@ -41,3 +41,22 @@ export interface CreateAreaRequest {
 }
 
 export type UpdateAreaRequest = Partial<CreateAreaRequest>;
+
+export type TrendDirection = "UP" | "STABLE" | "DOWN";
+
+export interface AreaTrend {
+  areaId: string;
+  areaName: string;
+  currentScore: number | null;
+  previousScore: number | null;
+  delta: number | null;
+  direction: TrendDirection;
+  snapshotCount: number;
+  weakness: string;
+}
+
+export interface AreaTrendsResult {
+  trends: AreaTrend[];
+  overallDirection: TrendDirection;
+  generatedAt: string;
+}

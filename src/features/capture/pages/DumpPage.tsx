@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Check, ChevronDown, ChevronUp, Loader2, Sparkles, Trash2, Zap } from "lucide-react";
 import { toast } from "sonner";
 
@@ -20,6 +20,8 @@ import {
   useListCapturesQuery,
   useUpdateCaptureTypeMutation,
 } from "../captureApi";
+import { useAppDispatch } from "@/store/hooks";
+import { api } from "@/store/api";
 import type { Capture, CaptureType, ConvertCaptureRequest } from "../types";
 
 // ── Visual metadata per capture type ────────────────────────────────────────
@@ -39,6 +41,8 @@ const TYPES: CaptureType[] = ["TASK", "HABIT", "NOTE", "RESOURCE", "VAULT"];
 function CaptureInput() {
   const [text, setText] = useState("");
   const [createCapture, { isLoading }] = useCreateCaptureMutation();
+  const dispatch = useAppDispatch();
+  const refetchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,6 +51,11 @@ function CaptureInput() {
     await createCapture({ text: trimmed });
     setText("");
     toast("Captured — AI is classifying…", { icon: "⚡" });
+    // Re-fetch after ~1s to catch auto-convert
+    if (refetchTimer.current) clearTimeout(refetchTimer.current);
+    refetchTimer.current = setTimeout(() => {
+      dispatch(api.util.invalidateTags([{ type: "Capture", id: "LIST" }]));
+    }, 1000);
   };
 
   return (
@@ -101,8 +110,8 @@ function ConvertForm({
   const needsTopic = capture.type === "NOTE" || capture.type === "RESOURCE";
   const isTask = capture.type === "TASK";
 
-  const [areaId, setAreaId] = useState("");
-  const [topicId, setTopicId] = useState("");
+  const [areaId, setAreaId] = useState(capture.meta?.suggestedAreaId ?? "");
+  const [topicId, setTopicId] = useState(capture.meta?.suggestedTopicId ?? "");
   const [priority, setPriority] = useState<ConvertCaptureRequest["priority"]>("MEDIUM");
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -200,7 +209,12 @@ function CaptureCard({ capture }: { capture: Capture }) {
     <div className="card card-pad" style={{ borderLeft: `3px solid ${meta.color}` }}>
       <div className="flex items-start gap-3">
         <div className="flex-1 min-w-0">
-          <p className="mb-2 text-[13.5px] leading-relaxed text-tx">
+          {capture.meta?.title && (
+            <p className="mb-0.5 text-[13.5px] font-[600] leading-snug text-tx">
+              {capture.meta.title}
+            </p>
+          )}
+          <p className={`mb-2 leading-relaxed text-tx-3 ${capture.meta?.title ? "text-[12px]" : "text-[13.5px] text-tx"}`}>
             {capture.text}
           </p>
           <div className="flex flex-wrap items-center gap-2">
@@ -232,6 +246,12 @@ function CaptureCard({ capture }: { capture: Capture }) {
               ))}
             </div>
             <span className="font-mono text-[10px] text-tx-4">{pct}% conf.</span>
+            {capture.meta?.suggestedAreaName && (
+              <span className="chip text-[10px]">→ {capture.meta.suggestedAreaName}</span>
+            )}
+            {capture.meta?.suggestedTopicName && (
+              <span className="chip text-[10px]">→ {capture.meta.suggestedTopicName}</span>
+            )}
             {capture.detectedUrl && (
               <span className="chip text-[10px]">URL detected</span>
             )}
@@ -239,19 +259,25 @@ function CaptureCard({ capture }: { capture: Capture }) {
         </div>
 
         <div className="flex shrink-0 items-center gap-1.5 pt-0.5">
-          <button
-            type="button"
-            onClick={() => setExpanded((v) => !v)}
-            className="ds-btn ghost text-[12px]"
-            title={expanded ? "Collapse" : "Convert"}
-          >
-            {expanded ? (
-              <ChevronUp className="size-3.5" />
-            ) : (
-              <ChevronDown className="size-3.5" />
-            )}
-            {expanded ? "Close" : "Convert"}
-          </button>
+          {capture.status === "CONVERTED" ? (
+            <span className="flex items-center gap-1 rounded-full bg-[rgba(45,212,167,0.12)] px-2.5 py-1 text-[11px] font-semibold text-[#2dd4a7]">
+              <Check className="size-3" /> Auto-converted to {TYPE_META[capture.type].label}
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setExpanded((v) => !v)}
+              className="ds-btn ghost text-[12px]"
+              title={expanded ? "Collapse" : "Convert"}
+            >
+              {expanded ? (
+                <ChevronUp className="size-3.5" />
+              ) : (
+                <ChevronDown className="size-3.5" />
+              )}
+              {expanded ? "Close" : "Convert"}
+            </button>
+          )}
           <button
             type="button"
             onClick={() => deleteCapture(capture.id)}
@@ -264,7 +290,7 @@ function CaptureCard({ capture }: { capture: Capture }) {
         </div>
       </div>
 
-      {expanded && (
+      {expanded && capture.status !== "CONVERTED" && (
         <ConvertForm
           capture={capture}
           onDone={() => setExpanded(false)}

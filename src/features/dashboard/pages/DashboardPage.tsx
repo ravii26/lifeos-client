@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowRight, Check, Play, Zap } from "lucide-react";
+import { AlertTriangle, ArrowRight, Check, Play, Zap } from "lucide-react";
 import { toast } from "sonner";
 
 import { selectCurrentUser } from "@/features/auth/authSlice";
@@ -19,6 +19,7 @@ import { useActiveFocus } from "@/features/focus/useActiveFocus";
 
 import { FocusCard } from "../components/FocusCard";
 import { QuickHabitRow } from "../components/QuickHabitRow";
+import { WhatNowCard } from "../components/WhatNowCard";
 
 function greeting(): string {
   const h = new Date().getHours();
@@ -29,18 +30,21 @@ function greeting(): string {
 
 const START_TAB_ROUTES: Record<string, string> = { areas: "/areas", dump: "/dump" };
 
+// Module-level flag: the start-tab redirect fires exactly once per page load,
+// not on every re-mount of DashboardPage (which would trap the user in a loop).
+let startTabApplied = false;
+
 export function DashboardPage() {
   const user = useAppSelector(selectCurrentUser);
   const firstName = user?.name.split(" ")[0];
   const focus = useActiveFocus();
   const navigate = useNavigate();
   const { data: settings } = useGetSettingsQuery();
-  const startTabApplied = useRef(false);
 
   // On first render after settings load, honour the user's startTab preference.
   useEffect(() => {
-    if (!settings || startTabApplied.current) return;
-    startTabApplied.current = true;
+    if (!settings || startTabApplied) return;
+    startTabApplied = true;
     const route = START_TAB_ROUTES[settings.startTab];
     if (route) navigate(route, { replace: true });
   }, [settings, navigate]);
@@ -55,14 +59,18 @@ export function DashboardPage() {
     [areas],
   );
 
-  // Per-area stats from tasks; score = % completed (placeholder until backend).
+  // Per-area stats: prefer server-computed score/tasksDone/tasksTotal when present.
   const areaStats = useMemo(() => {
     const m = new Map<string, { done: number; total: number; score: number }>();
     for (const a of areas ?? []) {
-      const mine = (tasks ?? []).filter((t) => t.areaId === a.id);
-      const done = mine.filter((t) => t.status === "COMPLETED").length;
-      const score = mine.length ? Math.round((done / mine.length) * 100) : 0;
-      m.set(a.id, { done, total: mine.length, score });
+      if (a.score != null) {
+        m.set(a.id, { done: a.tasksDone ?? 0, total: a.tasksTotal ?? 0, score: a.score });
+      } else {
+        const mine = (tasks ?? []).filter((t) => t.areaId === a.id);
+        const done = mine.filter((t) => t.status === "COMPLETED").length;
+        const score = mine.length ? Math.round((done / mine.length) * 100) : 0;
+        m.set(a.id, { done, total: mine.length, score });
+      }
     }
     return m;
   }, [areas, tasks]);
@@ -222,6 +230,11 @@ export function DashboardPage() {
         <FocusCard />
       </div>
 
+      {/* What Now — decision engine */}
+      <div className="mt-[var(--gap)]">
+        <WhatNowCard />
+      </div>
+
       {/* Row 2: life areas + momentum */}
       <div className="mt-[var(--gap)] grid gap-[var(--gap)] lg:grid-cols-[1.45fr_1fr]">
         <div className="card card-pad">
@@ -239,9 +252,13 @@ export function DashboardPage() {
                   <Link
                     key={a.id}
                     to="/areas"
-                    className="flex flex-col items-center gap-2 rounded-[var(--r-md)] border border-line bg-surface-2 px-3 py-3.5 transition-colors hover:border-line-2"
+                    className="relative flex flex-col items-center gap-2 rounded-[var(--r-md)] border border-line bg-surface-2 px-3 py-3.5 transition-colors hover:border-line-2"
+                    style={st.score < 40 ? { borderColor: "rgba(255,107,129,0.35)", background: "rgba(255,107,129,0.04)" } : undefined}
                   >
-                    <Donut value={st.score} size={74} stroke={7} color={a.color}>
+                    {st.score < 40 && (
+                      <AlertTriangle className="absolute top-2 right-2 size-3 text-[#ff6b81]" />
+                    )}
+                    <Donut value={st.score} size={74} stroke={7} color={st.score < 40 ? "#ff6b81" : a.color}>
                       <span className="font-mono text-[19px] font-semibold">
                         {st.score}
                       </span>

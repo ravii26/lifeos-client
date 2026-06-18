@@ -176,6 +176,10 @@ export const knowledgeApi = api.injectEndpoints({
     }),
 
     // ── Notes ───────────────────────────────────────────────
+    getNote: builder.query<Note, string>({
+      query: (id) => ({ url: `/notes/${id}`, method: "GET" }),
+      providesTags: (_res, _err, id) => [{ type: "Note", id }],
+    }),
     listNotes: builder.query<
       Note[],
       {
@@ -230,6 +234,7 @@ export const {
   useUpdateResourceMutation,
   useDeleteResourceMutation,
   useUpdateResourceProgressMutation,
+  useGetNoteQuery,
   useListNotesQuery,
   useCreateNoteMutation,
   useUpdateNoteMutation,

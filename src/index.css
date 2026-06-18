@@ -588,6 +588,174 @@
     border-radius: 6px;
   }
 
+  /* TipTap WYSIWYG editor */
+  .editor-wrap .ProseMirror {
+    outline: none;
+    min-height: 400px;
+  }
+  .editor-wrap .ProseMirror p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    color: var(--tx-4);
+    pointer-events: none;
+    float: left;
+    height: 0;
+  }
+  .editor-wrap .ProseMirror h1,
+  .editor-wrap .ProseMirror h2,
+  .editor-wrap .ProseMirror h3,
+  .editor-wrap .ProseMirror h4 {
+    color: var(--tx);
+    font-weight: 650;
+    letter-spacing: -0.015em;
+    margin-top: 1.5em;
+    margin-bottom: 0.4em;
+    line-height: 1.25;
+  }
+  .editor-wrap .ProseMirror h1 { font-size: 22px; }
+  .editor-wrap .ProseMirror h2 { font-size: 18px; }
+  .editor-wrap .ProseMirror h3 { font-size: 15px; font-weight: 600; }
+  .editor-wrap .ProseMirror p {
+    color: var(--tx-2);
+    font-size: 14.5px;
+    line-height: 1.8;
+    margin-bottom: 0.75em;
+  }
+  .editor-wrap .ProseMirror strong {
+    color: var(--tx);
+    font-weight: 650;
+  }
+  .editor-wrap .ProseMirror em {
+    color: var(--tx-2);
+    font-style: italic;
+  }
+  .editor-wrap .ProseMirror s {
+    color: var(--tx-4);
+  }
+  .editor-wrap .ProseMirror code {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    background: var(--surface-3);
+    color: var(--acc);
+    padding: 1px 6px;
+    border-radius: 5px;
+  }
+  .editor-wrap .ProseMirror pre {
+    background: var(--inset);
+    border: 1px solid var(--line);
+    border-radius: var(--r-sm);
+    padding: 14px 16px;
+    overflow-x: auto;
+    margin: 1em 0;
+  }
+  .editor-wrap .ProseMirror pre code {
+    background: none;
+    padding: 0;
+    color: var(--tx-2);
+    font-size: 13px;
+  }
+  .editor-wrap .ProseMirror blockquote {
+    border-left: 3px solid var(--acc-line);
+    padding-left: 14px;
+    color: var(--tx-3);
+    margin: 1em 0;
+    font-style: italic;
+  }
+  .editor-wrap .ProseMirror ul,
+  .editor-wrap .ProseMirror ol {
+    padding-left: 22px;
+    margin-bottom: 0.75em;
+    color: var(--tx-2);
+    font-size: 14.5px;
+    line-height: 1.8;
+  }
+  .editor-wrap .ProseMirror ul { list-style-type: disc; }
+  .editor-wrap .ProseMirror ol { list-style-type: decimal; }
+  .editor-wrap .ProseMirror li { margin-bottom: 0.25em; }
+  .editor-wrap .ProseMirror hr {
+    border: none;
+    border-top: 1px solid var(--line-2);
+    margin: 1.5em 0;
+  }
+  .editor-wrap .ProseMirror a {
+    color: var(--acc);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  /* Selection highlight */
+  .editor-wrap .ProseMirror ::selection {
+    background: var(--acc-soft);
+  }
+
+  /* Note editor markdown preview */
+  .prose-note {
+    color: var(--tx-2);
+    font-size: 14px;
+    line-height: 1.75;
+  }
+  .prose-note h1,
+  .prose-note h2,
+  .prose-note h3,
+  .prose-note h4 {
+    color: var(--tx);
+    font-weight: 650;
+    letter-spacing: -0.015em;
+    margin-top: 1.6em;
+    margin-bottom: 0.5em;
+  }
+  .prose-note h1 { font-size: 22px; }
+  .prose-note h2 { font-size: 18px; }
+  .prose-note h3 { font-size: 15px; }
+  .prose-note p { margin-bottom: 1em; }
+  .prose-note strong { color: var(--tx); font-weight: 650; }
+  .prose-note em { color: var(--tx-2); }
+  .prose-note code {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    background: var(--surface-3);
+    color: var(--acc);
+    padding: 1px 6px;
+    border-radius: 5px;
+  }
+  .prose-note pre {
+    background: var(--inset);
+    border: 1px solid var(--line);
+    border-radius: var(--r-sm);
+    padding: 14px 16px;
+    overflow-x: auto;
+    margin-bottom: 1em;
+  }
+  .prose-note pre code {
+    background: none;
+    padding: 0;
+    color: var(--tx-2);
+    font-size: 13px;
+  }
+  .prose-note blockquote {
+    border-left: 3px solid var(--acc-line);
+    padding-left: 14px;
+    color: var(--tx-3);
+    margin: 1em 0;
+    font-style: italic;
+  }
+  .prose-note ul,
+  .prose-note ol {
+    padding-left: 22px;
+    margin-bottom: 1em;
+  }
+  .prose-note ul { list-style-type: disc; }
+  .prose-note ol { list-style-type: decimal; }
+  .prose-note li { margin-bottom: 0.3em; }
+  .prose-note hr {
+    border: none;
+    border-top: 1px solid var(--line-2);
+    margin: 1.5em 0;
+  }
+  .prose-note a {
+    color: var(--acc);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
   /* Empty state */
   .empty {
     text-align: center;

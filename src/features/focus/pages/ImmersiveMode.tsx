@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Check, Pause, Play, X } from "lucide-react";
 import { toast } from "sonner";
@@ -8,6 +8,7 @@ import {
   useCompleteTaskMutation,
   useListTasksQuery,
 } from "@/features/tasks/tasksApi";
+import type { Task } from "@/features/tasks/types";
 import { PRIORITY_BY_VALUE } from "@/features/tasks/constants";
 
 import { useActiveFocus } from "../useActiveFocus";
@@ -64,23 +65,30 @@ export function ImmersiveMode() {
 
   const handleStop = () => {
     focus.stop();
-    toast("Focus session logged", { icon: "⏸" });
   };
+
+  // Refs so the keyboard handler always reads the latest values without
+  // needing to re-attach the listener on every render.
+  const focusRef = useRef(focus);
+  const openRef = useRef(open);
+  useLayoutEffect(() => {
+    focusRef.current = focus;
+    openRef.current = open;
+  });
 
   // Space bar → start/stop
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.code === "Space" && e.target === document.body) {
         e.preventDefault();
-        if (focus.active) handleStop();
-        else if (open[0]) focus.start(open[0].id);
+        if (focusRef.current.active) focusRef.current.stop();
+        else if (openRef.current[0]) focusRef.current.start(openRef.current[0].id);
       }
       if (e.code === "Escape") navigate("/");
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [focus.active, open]);
+  }, [navigate]);
 
   return (
     <div
@@ -285,7 +293,7 @@ function TaskPicker({
   onPick,
   onBlank,
 }: {
-  tasks: ReturnType<typeof useListTasksQuery>["data"] extends (infer T)[] | undefined ? T[] : never[];
+  tasks: Task[];
   areaById: Map<string, { color: string; name: string }>;
   onPick: (id: string) => void;
   onBlank: () => void;

@@ -271,6 +271,7 @@ function AppSettingsCard() {
   // Sync form state whenever settings load from the server.
   useEffect(() => {
     if (!settings) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setVibe(settings.vibe ?? "focused");
     setFont(settings.font ?? "inter");
     setStartTab(settings.startTab ?? "today");

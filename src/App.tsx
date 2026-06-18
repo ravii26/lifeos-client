@@ -12,11 +12,13 @@ import { GoalsPage } from "@/features/goals/pages/GoalsPage";
 import { HabitsPage } from "@/features/habits/pages/HabitsPage";
 import { TopicsPage } from "@/features/knowledge/pages/TopicsPage";
 import { TopicDetailPage } from "@/features/knowledge/pages/TopicDetailPage";
+import { NoteEditorPage } from "@/features/knowledge/pages/NoteEditorPage";
 import { VaultPage } from "@/features/vault/pages/VaultPage";
 import { ReviewsPage } from "@/features/reviews/pages/ReviewsPage";
 import { ReviewDetailPage } from "@/features/reviews/pages/ReviewDetailPage";
 import { CalendarPage } from "@/features/calendar/pages/CalendarPage";
 import { IdentityPage } from "@/features/identity/pages/IdentityPage";
+import { SettingsPage } from "@/features/settings/pages/SettingsPage";
 import { ImmersiveMode } from "@/features/focus/pages/ImmersiveMode";
 import { TasksPage } from "@/features/tasks/pages/TasksPage";
 
@@ -44,9 +46,11 @@ function App() {
               <Route path="/review/:reviewId" element={<ReviewDetailPage />} />
               <Route path="/learn" element={<TopicsPage />} />
               <Route path="/learn/:topicId" element={<TopicDetailPage />} />
+              <Route path="/learn/:topicId/notes/:noteId" element={<NoteEditorPage />} />
               <Route path="/vault" element={<VaultPage />} />
               <Route path="/dump" element={<DumpPage />} />
-              <Route path="/settings" element={<IdentityPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/identity" element={<IdentityPage />} />
             </Route>
           </Route>
 

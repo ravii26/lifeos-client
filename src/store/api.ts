@@ -36,6 +36,8 @@ export const api = createApi({
     "Capture",
     "AreaSnapshot",
     "Settings",
+    "Decision",
+    "Graph",
   ],
   endpoints: () => ({}),
 });
