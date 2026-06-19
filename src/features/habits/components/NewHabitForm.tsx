@@ -16,30 +16,48 @@ import type { ApiError } from "@/lib/api/axiosBaseQuery";
 import { parseApiErrors, type FieldErrorMap } from "@/lib/api/formErrors";
 import type { Area } from "@/features/areas/types";
 
-import { useCreateHabitMutation } from "../habitsApi";
+import { useCreateHabitMutation, useUpdateHabitMutation } from "../habitsApi";
 import { DAYS, FREQUENCIES, HABIT_TYPES } from "../constants";
-import type { Day, HabitFrequency, HabitType } from "../types";
+import type { Day, Habit, HabitFrequency, HabitType } from "../types";
 
 export function NewHabitForm({
   areas,
+  habit,
   onClose,
 }: {
   areas: Area[];
+  /** When provided, the form edits this habit instead of creating one. */
+  habit?: Habit;
   onClose: () => void;
 }) {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [areaId, setAreaId] = useState(areas[0]?.id ?? "");
-  const [habitType, setHabitType] = useState<HabitType>("BOOLEAN");
-  const [targetCount, setTargetCount] = useState("");
-  const [targetMinutes, setTargetMinutes] = useState("");
-  const [frequency, setFrequency] = useState<HabitFrequency>("DAILY");
-  const [weeklyTarget, setWeeklyTarget] = useState("");
-  const [specificDays, setSpecificDays] = useState<Day[]>([]);
-  const [reminderTime, setReminderTime] = useState("");
+  const isEdit = !!habit;
+  const [title, setTitle] = useState(habit?.title ?? "");
+  const [description, setDescription] = useState(habit?.description ?? "");
+  const [areaId, setAreaId] = useState(habit?.areaId ?? areas[0]?.id ?? "");
+  const [habitType, setHabitType] = useState<HabitType>(
+    habit?.habitType ?? "BOOLEAN",
+  );
+  const [targetCount, setTargetCount] = useState(
+    habit?.targetCount != null ? String(habit.targetCount) : "",
+  );
+  const [targetMinutes, setTargetMinutes] = useState(
+    habit?.targetMinutes != null ? String(habit.targetMinutes) : "",
+  );
+  const [frequency, setFrequency] = useState<HabitFrequency>(
+    habit?.frequency ?? "DAILY",
+  );
+  const [weeklyTarget, setWeeklyTarget] = useState(
+    habit?.weeklyTarget != null ? String(habit.weeklyTarget) : "",
+  );
+  const [specificDays, setSpecificDays] = useState<Day[]>(
+    habit?.specificDays ?? [],
+  );
+  const [reminderTime, setReminderTime] = useState(habit?.reminderTime ?? "");
   const [fieldErrors, setFieldErrors] = useState<FieldErrorMap>({});
   const [formError, setFormError] = useState<string | null>(null);
-  const [createHabit, { isLoading }] = useCreateHabitMutation();
+  const [createHabit, { isLoading: creating }] = useCreateHabitMutation();
+  const [updateHabit, { isLoading: updating }] = useUpdateHabitMutation();
+  const isLoading = creating || updating;
 
   const toggleDay = (day: Day) =>
     setSpecificDays((prev) =>
@@ -52,24 +70,50 @@ export function NewHabitForm({
     setFieldErrors({});
     setFormError(null);
     try {
-      await createHabit({
-        title: title.trim(),
-        areaId,
-        habitType,
-        frequency,
-        ...(description.trim() ? { description: description.trim() } : {}),
-        ...(habitType === "COUNT" && targetCount
-          ? { targetCount: Number(targetCount) }
-          : {}),
-        ...(habitType === "TIMER" && targetMinutes
-          ? { targetMinutes: Number(targetMinutes) }
-          : {}),
-        ...(frequency === "WEEKLY" && weeklyTarget
-          ? { weeklyTarget: Number(weeklyTarget) }
-          : {}),
-        ...(frequency === "CUSTOM" ? { specificDays } : {}),
-        ...(reminderTime ? { reminderTime } : {}),
-      }).unwrap();
+      if (isEdit) {
+        // Send null to clear fields that no longer apply to the chosen type/cadence.
+        await updateHabit({
+          id: habit.id,
+          data: {
+            title: title.trim(),
+            areaId,
+            habitType,
+            frequency,
+            description: description.trim() ? description.trim() : null,
+            targetCount:
+              habitType === "COUNT" && targetCount ? Number(targetCount) : null,
+            targetMinutes:
+              habitType === "TIMER" && targetMinutes
+                ? Number(targetMinutes)
+                : null,
+            weeklyTarget:
+              frequency === "WEEKLY" && weeklyTarget
+                ? Number(weeklyTarget)
+                : null,
+            specificDays: frequency === "CUSTOM" ? specificDays : null,
+            reminderTime: reminderTime ? reminderTime : null,
+          },
+        }).unwrap();
+      } else {
+        await createHabit({
+          title: title.trim(),
+          areaId,
+          habitType,
+          frequency,
+          ...(description.trim() ? { description: description.trim() } : {}),
+          ...(habitType === "COUNT" && targetCount
+            ? { targetCount: Number(targetCount) }
+            : {}),
+          ...(habitType === "TIMER" && targetMinutes
+            ? { targetMinutes: Number(targetMinutes) }
+            : {}),
+          ...(frequency === "WEEKLY" && weeklyTarget
+            ? { weeklyTarget: Number(weeklyTarget) }
+            : {}),
+          ...(frequency === "CUSTOM" ? { specificDays } : {}),
+          ...(reminderTime ? { reminderTime } : {}),
+        }).unwrap();
+      }
       onClose();
     } catch (err) {
       const { fields, message } = parseApiErrors(err as ApiError);
@@ -248,7 +292,13 @@ export function NewHabitForm({
 
       <div className="mt-5 flex gap-2">
         <Button type="submit" disabled={isLoading || !title.trim() || !areaId}>
-          {isLoading ? "Adding…" : "Add habit"}
+          {isEdit
+            ? isLoading
+              ? "Saving…"
+              : "Save changes"
+            : isLoading
+              ? "Adding…"
+              : "Add habit"}
         </Button>
         <Button type="button" variant="ghost" onClick={onClose}>
           Cancel

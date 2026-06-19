@@ -9,6 +9,7 @@ import { useVibeConfig } from "@/features/settings/useVibe";
 import { useListHabitsQuery } from "../habitsApi";
 import { HabitCard } from "../components/HabitCard";
 import { NewHabitForm } from "../components/NewHabitForm";
+import type { Habit } from "../types";
 
 type Filter = "active" | "paused" | "all";
 type Status = { done: boolean; streak: number };
@@ -18,7 +19,13 @@ export function HabitsPage() {
   const { data: areas } = useListAreasQuery();
   const cfg = useVibeConfig();
   const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState<Habit | null>(null);
   const [filter, setFilter] = useState<Filter>("active");
+
+  const startEdit = useCallback((habit: Habit) => {
+    setEditing(habit);
+    setShowForm(false);
+  }, []);
   const [statuses, setStatuses] = useState<Record<string, Status>>({});
 
   const onStatus = useCallback((id: string, s: Status) => {
@@ -76,7 +83,10 @@ export function HabitsPage() {
         </div>
         <button
           type="button"
-          onClick={() => setShowForm((v) => !v)}
+          onClick={() => {
+            setEditing(null);
+            setShowForm((v) => !v);
+          }}
           className="ds-btn ghost"
         >
           <Plus className="size-3.5" /> New habit
@@ -93,9 +103,17 @@ export function HabitsPage() {
         </div>
       )}
 
-      {showForm && (
+      {(showForm || editing) && (
         <div className="mb-[var(--gap)]">
-          <NewHabitForm areas={areas ?? []} onClose={() => setShowForm(false)} />
+          <NewHabitForm
+            key={editing?.id ?? "new"}
+            areas={areas ?? []}
+            habit={editing ?? undefined}
+            onClose={() => {
+              setShowForm(false);
+              setEditing(null);
+            }}
+          />
         </div>
       )}
 
@@ -125,6 +143,7 @@ export function HabitsPage() {
             habit={habit}
             area={habit.areaId ? areaById.get(habit.areaId) : undefined}
             onStatus={onStatus}
+            onEdit={startEdit}
           />
         ))}
       </div>

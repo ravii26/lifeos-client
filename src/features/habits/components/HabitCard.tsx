@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from "react";
-import { Check, Flame, Plus, Trash2 } from "lucide-react";
+import { Check, Flame, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
@@ -24,10 +24,12 @@ export function HabitCard({
   habit,
   area,
   onStatus,
+  onEdit,
 }: {
   habit: Habit;
   area?: Area;
   onStatus?: (id: string, s: { done: boolean; streak: number }) => void;
+  onEdit?: (habit: Habit) => void;
 }) {
   // B4: use server-inlined history/stats when present; fall back to logs query.
   const hasInline = habit.history != null;
@@ -175,6 +177,16 @@ export function HabitCard({
             </>
           )}
         </button>
+        {onEdit && (
+          <button
+            type="button"
+            onClick={() => onEdit(habit)}
+            title="Edit habit"
+            className="grid size-7 shrink-0 place-items-center rounded-md text-tx-4 opacity-0 transition hover:bg-surface-3 hover:text-tx group-hover:opacity-100"
+          >
+            <Pencil className="size-3.5" />
+          </button>
+        )}
         <button
           type="button"
           onClick={() => deleteHabit(habit.id)}

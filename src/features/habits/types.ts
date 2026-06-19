@@ -52,4 +52,15 @@ export interface CreateHabitRequest {
   isActive?: boolean;
 }
 
-export type UpdateHabitRequest = Partial<CreateHabitRequest>;
+export type UpdateHabitRequest = Partial<
+  Omit<CreateHabitRequest, "areaId">
+> & {
+  areaId?: string;
+  // Nullable fields may be set to null to clear them on the backend.
+  description?: string | null;
+  targetCount?: number | null;
+  targetMinutes?: number | null;
+  weeklyTarget?: number | null;
+  specificDays?: Day[] | null;
+  reminderTime?: string | null;
+};

@@ -17,26 +17,35 @@ import type { Area } from "@/features/areas/types";
 import { PRIORITIES } from "@/features/tasks/constants";
 import type { Priority } from "@/features/tasks/types";
 
-import { useCreateGoalMutation } from "../goalsApi";
+import { useCreateGoalMutation, useUpdateGoalMutation } from "../goalsApi";
+import { getFocusError } from "../focusError";
 import { STATUSES } from "../constants";
-import type { GoalStatus } from "../types";
+import type { Goal, GoalStatus } from "../types";
 
 export function NewGoalForm({
   areas,
+  goal,
   onClose,
 }: {
   areas: Area[];
+  /** When provided, the form edits this goal instead of creating one. */
+  goal?: Goal;
   onClose: () => void;
 }) {
-  const [title, setTitle] = useState("");
-  const [areaId, setAreaId] = useState(areas[0]?.id ?? "");
-  const [description, setDescription] = useState("");
-  const [priority, setPriority] = useState<Priority>("MEDIUM");
-  const [status, setStatus] = useState<GoalStatus>("ACTIVE");
-  const [deadline, setDeadline] = useState("");
+  const isEdit = !!goal;
+  const [title, setTitle] = useState(goal?.title ?? "");
+  const [areaId, setAreaId] = useState(goal?.areaId ?? areas[0]?.id ?? "");
+  const [description, setDescription] = useState(goal?.description ?? "");
+  const [priority, setPriority] = useState<Priority>(goal?.priority ?? "MEDIUM");
+  // New goals default to the backlog (PARKED); activating is a deliberate act.
+  const [status, setStatus] = useState<GoalStatus>(goal?.status ?? "PARKED");
+  // DateInput wants `yyyy-mm-dd`; the stored deadline is a full ISO timestamp.
+  const [deadline, setDeadline] = useState(goal?.deadline?.slice(0, 10) ?? "");
   const [fieldErrors, setFieldErrors] = useState<FieldErrorMap>({});
   const [formError, setFormError] = useState<string | null>(null);
-  const [createGoal, { isLoading }] = useCreateGoalMutation();
+  const [createGoal, { isLoading: creating }] = useCreateGoalMutation();
+  const [updateGoal, { isLoading: updating }] = useUpdateGoalMutation();
+  const isLoading = creating || updating;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,6 +53,23 @@ export function NewGoalForm({
     setFieldErrors({});
     setFormError(null);
     try {
+      if (isEdit) {
+        // Status stays out of the edit form — ACTIVE/PARKED transitions must go
+        // through the focus endpoints (cap enforcement), which the card owns.
+        // Send null to clear optional fields that were emptied.
+        await updateGoal({
+          id: goal.id,
+          data: {
+            title: title.trim(),
+            areaId,
+            priority,
+            description: description.trim() ? description.trim() : null,
+            deadline: deadline ? new Date(deadline).toISOString() : null,
+          },
+        }).unwrap();
+        onClose();
+        return;
+      }
       await createGoal({
         title: title.trim(),
         areaId,
@@ -54,6 +80,14 @@ export function NewGoalForm({
       }).unwrap();
       onClose();
     } catch (err) {
+      // Hitting the focus cap (409) returns a structured object, not field
+      // errors — surface it as a friendly message instead of garbled fields.
+      if (getFocusError(err)?.reason === "MAX_ACTIVE_GOALS_REACHED") {
+        setFormError(
+          "You're already focusing on the max number of goals. Create it as parked, then activate it from the backlog.",
+        );
+        return;
+      }
       const { fields, message } = parseApiErrors(err as ApiError);
       setFieldErrors(fields);
       setFormError(message);
@@ -135,26 +169,37 @@ export function NewGoalForm({
           </Select>
         </div>
 
-        <div className="space-y-2">
-          <Label>Status</Label>
-          <Select value={status} onValueChange={(v) => setStatus(v as GoalStatus)}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {STATUSES.map((s) => (
-                <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        {!isEdit && (
+          <div className="space-y-2">
+            <Label>Status</Label>
+            <Select value={status} onValueChange={(v) => setStatus(v as GoalStatus)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {STATUSES.map((s) => (
+                  <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-[11px] text-tx-4">
+              Parked goals sit in your backlog until you activate them.
+            </p>
+          </div>
+        )}
       </div>
 
       {formError && <p className="mt-4 text-sm text-danger">{formError}</p>}
 
       <div className="mt-5 flex gap-2">
         <Button type="submit" disabled={isLoading || !title.trim() || !areaId}>
-          {isLoading ? "Adding…" : "Add goal"}
+          {isLoading
+            ? isEdit
+              ? "Saving…"
+              : "Adding…"
+            : isEdit
+              ? "Save changes"
+              : "Add goal"}
         </Button>
         <Button type="button" variant="ghost" onClick={onClose}>
           Cancel
