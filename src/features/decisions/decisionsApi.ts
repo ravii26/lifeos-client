@@ -20,7 +20,28 @@ export interface StreakAlert {
   message: string;
 }
 
+// Drives hero card theming. Treat any unknown value as "neutral" for
+// forward-safety.
+export type Tone = "encouraging" | "firm" | "celebratory" | "neutral";
+
+// The single thing to do now — rendered as the hero CTA.
+// refId always equals suggestions[0].refId, so the CTA and the top of the
+// list deep-link to the same entity. REVIEW has a null refId (open composer).
+export interface PrimaryAction {
+  type: SuggestionType;
+  refId: string | null;
+  title: string;
+  why: string;
+  estimatedMinutes: number | null;
+}
+
 export interface DecisionResult {
+  // Coach layer — present on both "ai" and "heuristic" sources.
+  headline: string;
+  briefing: string;
+  tone: Tone;
+  // null when there's nothing to do — render the empty/celebration state.
+  primaryAction: PrimaryAction | null;
   suggestions: DecisionSuggestion[];
   neglectedArea: {
     id: string;

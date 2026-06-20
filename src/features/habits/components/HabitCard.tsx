@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from "react";
-import { Check, Flame, Pencil, Plus, Trash2 } from "lucide-react";
+import { Check, Flame, Minus, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
@@ -83,38 +83,76 @@ export function HabitCard({
 
   const cfg = useVibeConfig();
   const color = area?.color ?? "var(--acc)";
+  const measured = habit.habitType === "COUNT" || habit.habitType === "TIMER";
+  const unit = habit.habitType === "TIMER" ? "m" : "";
+  const step = habit.habitType === "TIMER" ? 5 : 1; // +5m for timers, +1 for counts
   const target =
     habit.habitType === "COUNT"
       ? (habit.targetCount ?? 1)
       : habit.habitType === "TIMER"
         ? (habit.targetMinutes ?? 1)
         : 1;
-  const val = todayDone ? target : 0;
+
+  // Today's logged amount for measured habits. The log endpoint upserts an
+  // absolute value per date, so steppers must send the new running total —
+  // read it from todayLog (inline) or fall back to today's entry in logs.
+  const todayVal = useMemo(() => {
+    if (!measured) return todayDone ? target : 0;
+    const fromLog = (l?: { count?: number | null; minutes?: number | null }) =>
+      habit.habitType === "COUNT" ? (l?.count ?? 0) : (l?.minutes ?? 0);
+    if (habit.todayLog != null) return fromLog(habit.todayLog);
+    const today = dayKey(new Date());
+    return fromLog((logs ?? []).find((l) => dayKey(new Date(l.date)) === today));
+  }, [measured, todayDone, target, habit.habitType, habit.todayLog, logs]);
+
+  const val = todayVal;
 
   const cadence = habit.frequency.toLowerCase();
   const sub =
     habit.habitType === "BOOLEAN"
       ? `${area?.name ?? "—"} · ${cadence}`
-      : `${area?.name ?? "—"} · ${cadence} · target ${target}${habit.habitType === "TIMER" ? "m" : ""}`;
+      : `${area?.name ?? "—"} · ${cadence} · target ${target}${unit}`;
 
-  const log = async () => {
-    if (todayDone || logging) return;
+  // Upsert today's running total. completed is derived from reaching target so
+  // partial progress doesn't falsely count toward the streak.
+  const setLog = async (next: number) => {
+    if (logging) return;
+    const amount = Math.max(0, next);
+    const completed = measured ? amount >= target : true;
+    const wasDone = todayDone;
     await logHabit({
       id: habit.id,
-      completed: true,
-      ...(habit.habitType === "COUNT" && habit.targetCount != null
-        ? { count: habit.targetCount }
-        : {}),
-      ...(habit.habitType === "TIMER" && habit.targetMinutes != null
-        ? { minutes: habit.targetMinutes }
-        : {}),
+      completed,
+      ...(habit.habitType === "COUNT" ? { count: amount } : {}),
+      ...(habit.habitType === "TIMER" ? { minutes: amount } : {}),
     });
-    const newStreak = streak + 1;
-    toast.success(
-      newStreak > 1
-        ? `${habit.title} logged · ${newStreak} day streak 🔥`
-        : `${habit.title} logged`,
-    );
+    if (completed && !wasDone) {
+      const newStreak = streak + 1;
+      toast.success(
+        newStreak > 1
+          ? `${habit.title} logged · ${newStreak} day streak 🔥`
+          : `${habit.title} logged`,
+      );
+    } else if (measured) {
+      toast.success(`${habit.title} · ${amount}/${target}${unit}`);
+    }
+  };
+
+  // Undo today's log (mistaken tap). Upsert completed:false with a zero amount.
+  const unlog = async () => {
+    if (logging) return;
+    await logHabit({
+      id: habit.id,
+      completed: false,
+      ...(habit.habitType === "COUNT" ? { count: 0 } : {}),
+      ...(habit.habitType === "TIMER" ? { minutes: 0 } : {}),
+    });
+    toast(`${habit.title} unmarked`);
+  };
+
+  const toggleBoolean = () => {
+    if (logging) return;
+    void (todayDone ? unlog() : setLog(1));
   };
 
   return (
@@ -154,29 +192,65 @@ export function HabitCard({
         <div className="flex flex-1 items-center gap-2">
           <div className="bar flex-1">
             <i
-              style={{ width: `${(val / target) * 100}%`, background: color }}
+              style={{
+                width: `${Math.min(100, (val / target) * 100)}%`,
+                background: color,
+              }}
             />
           </div>
           <span className="font-mono text-[11px] text-tx-3">
             {val}/{target}
           </span>
         </div>
-        <button
-          type="button"
-          onClick={log}
-          disabled={logging}
-          className={cn("ds-btn sm", !todayDone && "acc")}
-        >
-          {todayDone ? (
-            <>
-              <Check className="size-3" /> Logged
-            </>
-          ) : (
-            <>
-              <Plus className="size-3" /> Log today
-            </>
-          )}
-        </button>
+        {measured ? (
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setLog(val - step)}
+              disabled={logging || val <= 0}
+              title={`-${step}${unit}`}
+              className="grid size-7 shrink-0 place-items-center rounded-md text-tx-3 transition hover:bg-surface-3 hover:text-tx disabled:opacity-40"
+            >
+              <Minus className="size-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setLog(val + step)}
+              disabled={logging}
+              title={`+${step}${unit}`}
+              className={cn("ds-btn sm", !todayDone && "acc")}
+            >
+              {todayDone ? (
+                <>
+                  <Check className="size-3" /> Done
+                </>
+              ) : (
+                <>
+                  <Plus className="size-3" /> +{step}
+                  {unit}
+                </>
+              )}
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={toggleBoolean}
+            disabled={logging}
+            title={todayDone ? "Tap to unmark" : "Mark done for today"}
+            className={cn("ds-btn sm", !todayDone && "acc")}
+          >
+            {todayDone ? (
+              <>
+                <Check className="size-3" /> Logged
+              </>
+            ) : (
+              <>
+                <Plus className="size-3" /> Log today
+              </>
+            )}
+          </button>
+        )}
         {onEdit && (
           <button
             type="button"

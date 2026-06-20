@@ -19,6 +19,7 @@ import { useListHabitsQuery } from "@/features/habits/habitsApi";
 import { useActiveFocus } from "@/features/focus/useActiveFocus";
 
 import { FocusCard } from "../components/FocusCard";
+import { FocusTrendCard } from "../components/FocusTrendCard";
 import { QuickHabitRow } from "../components/QuickHabitRow";
 import { WhatNowCard } from "../components/WhatNowCard";
 
@@ -354,6 +355,7 @@ export function DashboardPage() {
             </div>
             <Sparkline data={scoreSeries} color="var(--acc)" height={56} />
           </div>
+          <FocusTrendCard />
         </div>
       </div>
 

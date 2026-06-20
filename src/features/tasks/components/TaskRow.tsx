@@ -1,4 +1,5 @@
-import { Check, Pause, Play, Repeat, Trash2 } from "lucide-react";
+import { useMemo } from "react";
+import { Check, Pause, Pencil, Play, Repeat, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
@@ -17,7 +18,15 @@ import {
 import { PRIORITY_BY_VALUE, priStyle } from "../constants";
 import type { Task } from "../types";
 
-export function TaskRow({ task, area }: { task: Task; area?: Area }) {
+export function TaskRow({
+  task,
+  area,
+  onEdit,
+}: {
+  task: Task;
+  area?: Area;
+  onEdit?: (task: Task) => void;
+}) {
   const [completeTask] = useCompleteTaskMutation();
   const [updateTask] = useUpdateTaskMutation();
   const [deleteTask, { isLoading: deleting }] = useDeleteTaskMutation();
@@ -31,6 +40,17 @@ export function TaskRow({ task, area }: { task: Task; area?: Area }) {
     (sn) => !sn.endedAt && sn.durationMinutes == null,
   );
   const focusingThis = activeFocus?.taskId === task.id;
+
+  // Real progress for TIMER tasks: sum of completed focus sessions linked to it.
+  // (The backend has no completedCount-increment endpoint, so focus time is the
+  // only true progress signal — an active, unstopped session isn't counted yet.)
+  const loggedMinutes = useMemo(
+    () =>
+      (sessions ?? [])
+        .filter((s) => s.taskId === task.id && s.durationMinutes != null)
+        .reduce((sum, s) => sum + (s.durationMinutes ?? 0), 0),
+    [sessions, task.id],
+  );
 
   const toggle = async () => {
     if (done) {
@@ -85,8 +105,11 @@ export function TaskRow({ task, area }: { task: Task; area?: Area }) {
             </span>
           )}
           {task.taskType === "TIMER" && task.targetMinutes != null && (
-            <span className="font-mono text-[11px] text-tx-3">
-              {task.targetMinutes}m
+            <span
+              className="font-mono text-[11px] text-tx-3"
+              title="Focused minutes / target"
+            >
+              {loggedMinutes}/{task.targetMinutes}m
             </span>
           )}
           {task.isRecurring && (
@@ -125,6 +148,17 @@ export function TaskRow({ task, area }: { task: Task; area?: Area }) {
         <span className="pri" style={priStyle(priority.hex)}>
           {priority.code}
         </span>
+      )}
+
+      {onEdit && (
+        <button
+          type="button"
+          onClick={() => onEdit(task)}
+          title="Edit task"
+          className="grid size-6 shrink-0 place-items-center rounded-md text-tx-4 opacity-0 transition hover:bg-surface-3 hover:text-tx group-hover:opacity-100"
+        >
+          <Pencil className="size-3.5" />
+        </button>
       )}
 
       <button

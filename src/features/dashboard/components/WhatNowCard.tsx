@@ -1,8 +1,14 @@
 import { useNavigate } from "react-router-dom";
-import { Brain, Flame, TrendingDown } from "lucide-react";
+import { Brain, Flame, TrendingDown, Play, PartyPopper } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { useGetDecisionsNowQuery, type DecisionSuggestion, type Urgency } from "@/features/decisions/decisionsApi";
+import {
+  useGetDecisionsNowQuery,
+  type DecisionSuggestion,
+  type PrimaryAction,
+  type Tone,
+  type Urgency,
+} from "@/features/decisions/decisionsApi";
 import { useVibeConfig } from "@/features/settings/useVibe";
 
 const TYPE_ROUTE: Record<string, string> = {
@@ -12,6 +18,16 @@ const TYPE_ROUTE: Record<string, string> = {
   REVIEW: "/review",
   GOAL: "/goals",
 };
+
+// tone → hero theming. Unknown values fall back to "neutral" for forward-safety.
+const TONE_THEME: Record<Tone, { accent: string; soft: string; emoji: string }> = {
+  encouraging: { accent: "#5b8cff", soft: "rgba(91,140,255,0.10)", emoji: "💪" },
+  firm: { accent: "#f5c842", soft: "rgba(245,200,66,0.10)", emoji: "⚠️" },
+  celebratory: { accent: "#2dd4a7", soft: "rgba(45,212,167,0.10)", emoji: "🎉" },
+  neutral: { accent: "var(--accent, #8a8f98)", soft: "var(--acc-soft)", emoji: "🧭" },
+};
+
+const toneTheme = (tone: Tone) => TONE_THEME[tone] ?? TONE_THEME.neutral;
 
 const URGENCY_STYLE: Record<Urgency, string> = {
   HIGH: "bg-[rgba(255,107,129,0.15)] text-[#ff6b81]",
@@ -24,6 +40,39 @@ const URGENCY_STYLE_ENERGETIC: Record<Urgency, string> = {
   MEDIUM: "bg-[rgba(245,200,66,0.22)] text-[#f5c842] font-bold",
   LOW: "bg-[rgba(45,212,167,0.15)] text-[#2dd4a7]",
 };
+
+function HeroCTA({ action, accent, soft }: { action: PrimaryAction; accent: string; soft: string }) {
+  const navigate = useNavigate();
+  // REVIEW has a null refId (open composer); other types deep-link to their section.
+  const go = () => navigate(TYPE_ROUTE[action.type] ?? "/");
+
+  return (
+    <button
+      type="button"
+      onClick={go}
+      className="mt-3 flex w-full items-center gap-3 rounded-[var(--r-sm)] px-3 py-3 text-left transition-colors hover:brightness-110"
+      style={{ background: soft, border: `1px solid ${accent}` }}
+    >
+      <span
+        className="flex size-8 shrink-0 items-center justify-center rounded-full"
+        style={{ background: accent }}
+      >
+        <Play className="size-4 fill-white text-white" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <span className="truncate text-[14px] font-[600] text-tx">{action.title}</span>
+          {action.estimatedMinutes != null && (
+            <span className="shrink-0 rounded-full bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] text-tx-3">
+              ~{action.estimatedMinutes}m
+            </span>
+          )}
+        </div>
+        <div className="mt-0.5 text-[12px] text-tx-3 leading-relaxed">{action.why}</div>
+      </div>
+    </button>
+  );
+}
 
 function SuggestionRow({ s, showUrgency, energetic }: { s: DecisionSuggestion; showUrgency: boolean; energetic: boolean }) {
   const navigate = useNavigate();
@@ -80,31 +129,54 @@ export function WhatNowCard() {
 
   if (isLoading || isError || !data) return null;
 
-  const suggestions = data.suggestions.slice(0, cfg.maxSuggestions);
-  const hiddenCount = data.suggestions.length - suggestions.length;
+  const theme = toneTheme(data.tone);
+  // suggestions[0] is mirrored by the hero CTA; the list is "if you want more".
+  const upNext = data.suggestions.slice(1, 1 + cfg.maxSuggestions);
+  const hiddenCount = Math.max(0, data.suggestions.length - 1 - upNext.length);
+  const caughtUp = data.primaryAction === null;
 
   return (
     <div className="card card-pad">
       <div className="mb-3 flex items-center gap-2">
         <Brain className="size-4 text-primary" />
         <div className="text-sm font-semibold tracking-[-0.01em]">What Now?</div>
-        {data.source === "ai" && (
-          <span className="ml-auto chip text-[10px]">AI</span>
+        {data.source === "ai" && <span className="ml-auto chip text-[10px]">AI</span>}
+      </div>
+
+      {/* Hero — coach voice */}
+      <div
+        className="rounded-[var(--r-sm)] px-3 py-3"
+        style={{ background: theme.soft, borderLeft: `3px solid ${theme.accent}` }}
+      >
+        <div className="flex items-start gap-2">
+          <span className="text-[15px] leading-none">{caughtUp ? "🎉" : theme.emoji}</span>
+          <div className="min-w-0">
+            <div className="text-[14.5px] font-[650] leading-snug text-tx">{data.headline}</div>
+            <div className="mt-1 text-[12.5px] text-tx-3 leading-relaxed">{data.briefing}</div>
+          </div>
+        </div>
+
+        {data.primaryAction ? (
+          <HeroCTA action={data.primaryAction} accent={theme.accent} soft="var(--surface-2,rgba(255,255,255,0.03))" />
+        ) : (
+          <div className="mt-3 flex items-center gap-2 rounded-[var(--r-sm)] bg-surface-2 px-3 py-2.5 text-[12.5px] text-tx-3">
+            <PartyPopper className="size-4 shrink-0 text-[#2dd4a7]" />
+            You&rsquo;re all caught up — nothing pending right now.
+          </div>
         )}
       </div>
 
-      {/* Today focus */}
-      <div className="mb-3 rounded-[var(--r-sm)] bg-acc-soft px-3 py-2.5">
-        <div className="eyebrow mb-0.5">Today's focus</div>
-        <div className="text-[13.5px] font-[550] text-tx">{data.todayFocus}</div>
-      </div>
-
-      {/* Suggestions */}
-      <div className="-mx-3 flex flex-col divide-y divide-line">
-        {suggestions.map((s) => (
-          <SuggestionRow key={s.rank} s={s} showUrgency={cfg.showUrgency} energetic={cfg.emphasize} />
-        ))}
-      </div>
+      {/* Up next — the ranked list, de-emphasized */}
+      {upNext.length > 0 && (
+        <>
+          <div className="eyebrow mb-1 mt-4">Up next</div>
+          <div className="-mx-3 flex flex-col divide-y divide-line">
+            {upNext.map((s) => (
+              <SuggestionRow key={s.rank} s={s} showUrgency={cfg.showUrgency} energetic={cfg.emphasize} />
+            ))}
+          </div>
+        </>
+      )}
 
       {hiddenCount > 0 && (
         <div className="mt-1 px-3 text-[11px] text-tx-4">

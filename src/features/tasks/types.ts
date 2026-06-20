@@ -18,6 +18,8 @@ export interface Task {
   recurrence?: Recurrence | null;
   source?: string | null;
   areaId?: string | null;
+  goalId?: string | null;
+  projectId?: string | null;
   completedAt?: string | null;
   createdAt?: string;
   updatedAt?: string;

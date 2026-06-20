@@ -90,7 +90,8 @@ export function NewHabitForm({
               frequency === "WEEKLY" && weeklyTarget
                 ? Number(weeklyTarget)
                 : null,
-            specificDays: frequency === "CUSTOM" ? specificDays : null,
+            // Backend expects an array here (not null) — clear with [].
+            specificDays: frequency === "CUSTOM" ? specificDays : [],
             reminderTime: reminderTime ? reminderTime : null,
           },
         }).unwrap();

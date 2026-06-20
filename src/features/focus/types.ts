@@ -12,6 +12,14 @@ export interface FocusSession {
   updatedAt?: string;
 }
 
+// One row from GET /focus/daily. Sessions crossing midnight are split across
+// days server-side, so `minutes` is the in-range focus for that UTC day.
+// Zero-focus days are omitted — fill gaps client-side when charting a range.
+export interface DailyFocusBucket {
+  date: string; // YYYY-MM-DD (UTC)
+  minutes: number;
+}
+
 export interface StartFocusRequest {
   startedAt?: string;
   notes?: string;

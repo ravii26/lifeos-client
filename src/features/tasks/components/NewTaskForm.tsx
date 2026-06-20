@@ -19,32 +19,51 @@ import {
   useListProjectsQuery,
 } from "@/features/goals/goalsApi";
 
-import { useCreateTaskMutation } from "../tasksApi";
+import { useCreateTaskMutation, useUpdateTaskMutation } from "../tasksApi";
 import { PRIORITIES, RECURRENCES, TASK_TYPES } from "../constants";
-import type { Priority, Recurrence, TaskType } from "../types";
+import type { Priority, Recurrence, Task, TaskType } from "../types";
+
+/** Convert an ISO/date string to the YYYY-MM-DD the date input expects. */
+function toDateValue(d?: string | null): string {
+  if (!d) return "";
+  const parsed = new Date(d);
+  return Number.isNaN(parsed.getTime()) ? "" : parsed.toISOString().slice(0, 10);
+}
 
 export function NewTaskForm({
   areas,
+  task,
   onClose,
 }: {
   areas: Area[];
+  /** When provided, the form edits this task instead of creating one. */
+  task?: Task;
   onClose: () => void;
 }) {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [areaId, setAreaId] = useState("");
-  const [goalId, setGoalId] = useState("");
-  const [projectId, setProjectId] = useState("");
-  const [priority, setPriority] = useState<Priority>("MEDIUM");
-  const [taskType, setTaskType] = useState<TaskType>("BOOLEAN");
-  const [targetCount, setTargetCount] = useState("");
-  const [targetMinutes, setTargetMinutes] = useState("");
-  const [dueDate, setDueDate] = useState("");
-  const [isRecurring, setIsRecurring] = useState(false);
-  const [recurrence, setRecurrence] = useState<Recurrence>("DAILY");
+  const isEdit = !!task;
+  const [title, setTitle] = useState(task?.title ?? "");
+  const [description, setDescription] = useState(task?.description ?? "");
+  const [areaId, setAreaId] = useState(task?.areaId ?? "");
+  const [goalId, setGoalId] = useState(task?.goalId ?? "");
+  const [projectId, setProjectId] = useState(task?.projectId ?? "");
+  const [priority, setPriority] = useState<Priority>(task?.priority ?? "MEDIUM");
+  const [taskType, setTaskType] = useState<TaskType>(task?.taskType ?? "BOOLEAN");
+  const [targetCount, setTargetCount] = useState(
+    task?.targetCount != null ? String(task.targetCount) : "",
+  );
+  const [targetMinutes, setTargetMinutes] = useState(
+    task?.targetMinutes != null ? String(task.targetMinutes) : "",
+  );
+  const [dueDate, setDueDate] = useState(toDateValue(task?.dueDate));
+  const [isRecurring, setIsRecurring] = useState(task?.isRecurring ?? false);
+  const [recurrence, setRecurrence] = useState<Recurrence>(
+    task?.recurrence ?? "DAILY",
+  );
   const [fieldErrors, setFieldErrors] = useState<FieldErrorMap>({});
   const [formError, setFormError] = useState<string | null>(null);
-  const [createTask, { isLoading }] = useCreateTaskMutation();
+  const [createTask, { isLoading: creating }] = useCreateTaskMutation();
+  const [updateTask, { isLoading: updating }] = useUpdateTaskMutation();
+  const isLoading = creating || updating;
 
   const { data: goals } = useListGoalsQuery(
     areaId ? { areaId } : undefined,
@@ -60,6 +79,34 @@ export function NewTaskForm({
     setFieldErrors({});
     setFormError(null);
     try {
+      if (isEdit) {
+        // Send null to clear fields that no longer apply to the chosen
+        // type/cadence. All task PATCH fields are nullable (no array fields
+        // like the habit `specificDays` trap), so null-clearing is safe.
+        await updateTask({
+          id: task.id,
+          data: {
+            title: title.trim(),
+            priority,
+            taskType,
+            description: description.trim() ? description.trim() : null,
+            areaId: areaId || null,
+            goalId: goalId || null,
+            projectId: projectId || null,
+            targetCount:
+              taskType === "COUNT" && targetCount ? Number(targetCount) : null,
+            targetMinutes:
+              taskType === "TIMER" && targetMinutes
+                ? Number(targetMinutes)
+                : null,
+            dueDate: dueDate ? new Date(dueDate).toISOString() : null,
+            isRecurring,
+            recurrence: isRecurring ? recurrence : null,
+          },
+        }).unwrap();
+        onClose();
+        return;
+      }
       await createTask({
         title: title.trim(),
         priority,
@@ -291,7 +338,13 @@ export function NewTaskForm({
 
       <div className="mt-5 flex gap-2">
         <Button type="submit" disabled={isLoading || !title.trim()}>
-          {isLoading ? "Adding…" : "Add task"}
+          {isEdit
+            ? isLoading
+              ? "Saving…"
+              : "Save changes"
+            : isLoading
+              ? "Adding…"
+              : "Add task"}
         </Button>
         <Button type="button" variant="ghost" onClick={onClose}>
           Cancel

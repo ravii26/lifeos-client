@@ -53,10 +53,21 @@ export interface CreateHabitRequest {
 }
 
 export type UpdateHabitRequest = Partial<
-  Omit<CreateHabitRequest, "areaId">
+  Omit<
+    CreateHabitRequest,
+    | "areaId"
+    | "description"
+    | "targetCount"
+    | "targetMinutes"
+    | "weeklyTarget"
+    | "specificDays"
+    | "reminderTime"
+  >
 > & {
   areaId?: string;
-  // Nullable fields may be set to null to clear them on the backend.
+  // Nullable fields may be set to null to clear them on the backend. They must
+  // be Omit-ted above: in an intersection the Partial<Create> branch's
+  // `string | undefined` collapses the `| null` away otherwise.
   description?: string | null;
   targetCount?: number | null;
   targetMinutes?: number | null;

@@ -19,6 +19,7 @@ import {
 } from "../tasksApi";
 import { NewTaskForm } from "../components/NewTaskForm";
 import { TaskRow } from "../components/TaskRow";
+import type { Task } from "../types";
 
 const PRIORITY_RANK: Record<string, number> = {
   CRITICAL: 0,
@@ -32,6 +33,7 @@ export function TasksPage() {
   const { data: areas } = useListAreasQuery();
   const cfg = useVibeConfig();
   const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState<Task | null>(null);
   const [draft, setDraft] = useState("");
   const [draftArea, setDraftArea] = useState("");
   const [createTask] = useCreateTaskMutation();
@@ -86,7 +88,10 @@ export function TasksPage() {
         </div>
         <button
           type="button"
-          onClick={() => setShowForm((v) => !v)}
+          onClick={() => {
+            setEditing(null);
+            setShowForm((v) => !v);
+          }}
           className="ds-btn ghost"
         >
           <Plus className="size-3.5" /> New task
@@ -104,9 +109,17 @@ export function TasksPage() {
         </div>
       )}
 
-      {showForm && (
+      {(showForm || editing) && (
         <div className="mb-[var(--gap)]">
-          <NewTaskForm areas={areas ?? []} onClose={() => setShowForm(false)} />
+          <NewTaskForm
+            key={editing?.id ?? "new"}
+            areas={areas ?? []}
+            task={editing ?? undefined}
+            onClose={() => {
+              setShowForm(false);
+              setEditing(null);
+            }}
+          />
         </div>
       )}
 
@@ -193,6 +206,10 @@ export function TasksPage() {
                 key={t.id}
                 task={t}
                 area={t.areaId ? areaById.get(t.areaId) : undefined}
+                onEdit={(task) => {
+                  setShowForm(false);
+                  setEditing(task);
+                }}
               />
             ))}
             {open.length === 0 && (
@@ -215,6 +232,10 @@ export function TasksPage() {
                 key={t.id}
                 task={t}
                 area={t.areaId ? areaById.get(t.areaId) : undefined}
+                onEdit={(task) => {
+                  setShowForm(false);
+                  setEditing(task);
+                }}
               />
             ))}
             {done.length === 0 && (

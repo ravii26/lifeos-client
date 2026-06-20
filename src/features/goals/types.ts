@@ -83,7 +83,14 @@ export interface CreateGoalRequest {
   status?: GoalStatus;
   deadline?: string;
 }
-export type UpdateGoalRequest = Partial<CreateGoalRequest>;
+// description/deadline are Omit-ted then re-added as nullable so the edit form
+// can send null to clear them (intersection would otherwise drop the `| null`).
+export type UpdateGoalRequest = Partial<
+  Omit<CreateGoalRequest, "description" | "deadline">
+> & {
+  description?: string | null;
+  deadline?: string | null;
+};
 
 export interface CreateProjectRequest {
   title: string;
