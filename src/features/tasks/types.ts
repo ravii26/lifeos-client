@@ -46,4 +46,9 @@ export interface CreateTaskRequest {
   sourceId?: string;
 }
 
-export type UpdateTaskRequest = Partial<CreateTaskRequest>;
+// PATCH /tasks/:id — every field is optional, and nullable ones can be sent as
+// null to clear them (the form clears fields that no longer apply to the
+// chosen type/cadence).
+export type UpdateTaskRequest = Partial<{
+  [K in keyof CreateTaskRequest]: CreateTaskRequest[K] | null;
+}>;

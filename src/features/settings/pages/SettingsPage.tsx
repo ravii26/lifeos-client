@@ -4,6 +4,7 @@ import { toast } from "sonner";
 
 import { useGetSettingsQuery, useUpdateSettingsMutation } from "../settingsApi";
 import type { FontPreference, StartTab, UpdateSettingsRequest, Vibe } from "../types";
+import { OPTIONAL_MODULES, OPTIONAL_MODULE_META, resolveEnabled } from "../modules";
 
 const VIBE_OPTIONS: { value: Vibe; label: string; desc: string }[] = [
   { value: "calm", label: "Calm", desc: "Soft, relaxed energy" },
@@ -46,6 +47,19 @@ export function SettingsPage() {
 
   const set = <K extends keyof UpdateSettingsRequest>(key: K, value: UpdateSettingsRequest[K]) =>
     setDraft((d) => ({ ...d, [key]: value }));
+
+  // Effective enabled set (draft wins over saved). Empty stored array == all on.
+  const enabledRaw = "enabledModules" in draft ? draft.enabledModules : settings?.enabledModules;
+  const enabled = resolveEnabled(enabledRaw);
+
+  // Toggling always writes an explicit list, so turning one module off doesn't
+  // get re-expanded to "all on" by the empty-means-all rule.
+  const toggleModule = (key: string, on: boolean) => {
+    const next = OPTIONAL_MODULES.filter((m) =>
+      m === key ? on : enabled.has(m),
+    );
+    set("enabledModules", next as string[]);
+  };
 
   const handleSave = async () => {
     if (!Object.keys(draft).length) return;
@@ -139,6 +153,44 @@ export function SettingsPage() {
                 {o.label}
               </button>
             ))}
+          </div>
+        </Row>
+
+        <Row label="Modules">
+          <p className="-mt-1 mb-1 text-[11px] text-tx-3">
+            Turn off what you don't use. Hidden modules disappear from the
+            sidebar everywhere you sign in. Core areas, tasks and capture stay on.
+          </p>
+          <div className="flex flex-col gap-1.5">
+            {OPTIONAL_MODULE_META.map((m) => {
+              const on = enabled.has(m.key);
+              return (
+                <button
+                  key={m.key}
+                  type="button"
+                  onClick={() => toggleModule(m.key, !on)}
+                  className={[
+                    "flex items-center justify-between rounded-[var(--r-sm)] border px-3 py-2 text-left transition-colors",
+                    on
+                      ? "border-acc-line bg-acc-soft text-tx"
+                      : "border-line bg-surface-2 text-tx-2 hover:border-line-2",
+                  ].join(" ")}
+                >
+                  <span>
+                    <span className="text-[13px] font-semibold">{m.label}</span>
+                    <span className="ml-2 text-[11px] text-tx-3">{m.desc}</span>
+                  </span>
+                  <span
+                    className={[
+                      "ml-3 rounded-full px-2 py-0.5 text-[10px] font-mono uppercase tracking-wide",
+                      on ? "bg-primary/20 text-primary" : "bg-surface-3 text-tx-3",
+                    ].join(" ")}
+                  >
+                    {on ? "On" : "Off"}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </Row>
 

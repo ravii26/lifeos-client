@@ -42,7 +42,7 @@ function CaptureInput() {
   const [text, setText] = useState("");
   const [createCapture, { isLoading }] = useCreateCaptureMutation();
   const dispatch = useAppDispatch();
-  const refetchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,12 +50,16 @@ function CaptureInput() {
     if (!trimmed) return;
     await createCapture({ text: trimmed });
     setText("");
-    toast("Captured — AI is classifying…", { icon: "⚡" });
-    // Re-fetch after ~1s to catch auto-convert
-    if (refetchTimer.current) clearTimeout(refetchTimer.current);
-    refetchTimer.current = setTimeout(() => {
-      dispatch(api.util.invalidateTags([{ type: "Capture", id: "LIST" }]));
-    }, 1000);
+    toast("Captured — AI is sorting…", { icon: "⚡" });
+    // Classification runs in the background on the server (~1-2s). Poll a few
+    // times so the type + worth rating + auto-convert appear without a manual
+    // refresh.
+    timers.current.forEach(clearTimeout);
+    timers.current = [1000, 2500, 4000].map((ms) =>
+      setTimeout(() => {
+        dispatch(api.util.invalidateTags([{ type: "Capture", id: "LIST" }]));
+      }, ms),
+    );
   };
 
   return (
@@ -203,10 +207,15 @@ function CaptureCard({ capture }: { capture: Capture }) {
   const [updateType] = useUpdateCaptureTypeMutation();
 
   const meta = TYPE_META[capture.type];
+  const classified = capture.confidence != null;
   const pct = Math.round((capture.confidence ?? 0) * 100);
+  const worthNow = capture.worthCheck === "WORTH_NOW";
 
   return (
-    <div className="card card-pad" style={{ borderLeft: `3px solid ${meta.color}` }}>
+    <div
+      className="card card-pad"
+      style={{ borderLeft: `3px solid ${classified ? meta.color : "var(--line-2)"}` }}
+    >
       <div className="flex items-start gap-3">
         <div className="flex-1 min-w-0">
           {capture.meta?.title && (
@@ -217,7 +226,22 @@ function CaptureCard({ capture }: { capture: Capture }) {
           <p className={`mb-2 leading-relaxed text-tx-3 ${capture.meta?.title ? "text-[12px]" : "text-[13.5px] text-tx"}`}>
             {capture.text}
           </p>
+          {!classified ? (
+            <div className="flex items-center gap-1.5 text-[12px] text-tx-4">
+              <Loader2 className="size-3 animate-spin" />
+              Sorting…
+            </div>
+          ) : (
           <div className="flex flex-wrap items-center gap-2">
+            {worthNow && (
+              <span
+                className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                style={{ color: "#2dd4a7", background: "rgba(45,212,167,0.12)" }}
+                title={capture.worthReason ?? "Worth acting on now"}
+              >
+                <Zap className="size-3" /> Worth now
+              </span>
+            )}
             {/* Type chip — clickable to cycle */}
             <div className="flex items-center gap-1">
               {TYPES.map((t) => (
@@ -256,6 +280,7 @@ function CaptureCard({ capture }: { capture: Capture }) {
               <span className="chip text-[10px]">URL detected</span>
             )}
           </div>
+          )}
         </div>
 
         <div className="flex shrink-0 items-center gap-1.5 pt-0.5">
@@ -267,8 +292,9 @@ function CaptureCard({ capture }: { capture: Capture }) {
             <button
               type="button"
               onClick={() => setExpanded((v) => !v)}
-              className="ds-btn ghost text-[12px]"
-              title={expanded ? "Collapse" : "Convert"}
+              disabled={!classified}
+              className="ds-btn ghost text-[12px] disabled:opacity-50"
+              title={!classified ? "Sorting…" : expanded ? "Collapse" : "Convert"}
             >
               {expanded ? (
                 <ChevronUp className="size-3.5" />
@@ -309,7 +335,12 @@ export function DumpPage() {
     isError,
   } = useListCapturesQuery({ processed: false });
 
-  const inbox = captures ?? [];
+  // Worth-now items float to the top of the inbox.
+  const inbox = [...(captures ?? [])].sort(
+    (a, b) =>
+      (b.worthCheck === "WORTH_NOW" ? 1 : 0) -
+      (a.worthCheck === "WORTH_NOW" ? 1 : 0),
+  );
 
   return (
     <div className="page rise">

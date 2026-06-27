@@ -40,6 +40,8 @@ export function useApplySettings() {
   useEffect(() => {
     if (!settings?.accent) return;
     applyAccentHex(settings.accent);
+    // Keep localStorage in sync so TweaksPanel reads the right initial value.
+    localStorage.setItem("lifeos.accent", settings.accent);
   }, [settings?.accent]);
 
   useEffect(() => {

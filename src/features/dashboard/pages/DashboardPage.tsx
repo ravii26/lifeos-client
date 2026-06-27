@@ -274,7 +274,7 @@ export function DashboardPage() {
                 return (
                   <Link
                     key={a.id}
-                    to="/areas"
+                    to={`/areas/${a.id}`}
                     className="relative flex flex-col items-center gap-2 rounded-[var(--r-md)] border border-line bg-surface-2 px-3 py-3.5 transition-colors hover:border-line-2"
                     style={cfg.showAlerts && st.score < 40 ? { borderColor: "rgba(255,107,129,0.35)", background: "rgba(255,107,129,0.04)" } : undefined}
                   >

@@ -2,7 +2,11 @@ import { useState } from "react";
 import { ExternalLink, Heart, Sparkles, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
-import { useDeleteVaultMutation, useMarkVaultUsedMutation } from "../vaultApi";
+import {
+  useDeleteVaultMutation,
+  useMarkVaultHelpfulMutation,
+  useMarkVaultUsedMutation,
+} from "../vaultApi";
 import { MEDIA_TYPE_BY_VALUE, VAULT_TYPE_BY_VALUE } from "../constants";
 import type { VaultItem } from "../types";
 import { VaultDetailDialog } from "./VaultDetailDialog";
@@ -38,6 +42,7 @@ export function VaultCard({ item }: { item: VaultItem }) {
   const [open, setOpen] = useState(false);
   const [deleteVault, { isLoading: deleting }] = useDeleteVaultMutation();
   const [markUsed, { isLoading: pulling }] = useMarkVaultUsedMutation();
+  const [markHelpful, { isLoading: helping }] = useMarkVaultHelpfulMutation();
   const meta = VAULT_TYPE_BY_VALUE[item.vaultType];
   const media = item.mediaType ? MEDIA_TYPE_BY_VALUE[item.mediaType] : null;
   const MediaIcon = media?.icon;
@@ -49,6 +54,15 @@ export function VaultCard({ item }: { item: VaultItem }) {
       toast(`"${item.title}" pulled from vault`, { icon: "✨" });
     } catch {
       toast.error("Couldn't pull that item. Try again.");
+    }
+  };
+
+  const handleHelped = async () => {
+    try {
+      await markHelpful(item.id).unwrap();
+      toast(`Glad "${item.title}" helped`, { icon: "💚" });
+    } catch {
+      toast.error("Couldn't record that. Try again.");
     }
   };
 
@@ -168,6 +182,17 @@ export function VaultCard({ item }: { item: VaultItem }) {
               <ExternalLink className="size-3.5" />
             </a>
           )}
+          <button
+            type="button"
+            onClick={stop(handleHelped)}
+            disabled={helping}
+            title="This helped me"
+            aria-label="Mark as helpful"
+            className="ds-btn sm gap-1.5 transition group-hover:border-line-3 disabled:opacity-50"
+          >
+            <Heart className="size-3.5" style={{ color: meta.accent }} />
+            {helping ? "…" : "Helped"}
+          </button>
           <button
             type="button"
             onClick={stop(handlePull)}

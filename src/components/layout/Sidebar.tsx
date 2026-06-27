@@ -19,8 +19,11 @@ import {
 import { cn } from "@/lib/utils";
 import { useListTasksQuery } from "@/features/tasks/tasksApi";
 import { useVibeConfig } from "@/features/settings/useVibe";
+import { useEnabledModules } from "@/features/settings/useEnabledModules";
 
-type NavItem = { label: string; to: string; icon: LucideIcon; end?: boolean };
+// `module` ties a nav item to a toggleable module; items without one (Dashboard,
+// Tasks, Areas, Dump, Settings) are core and always shown.
+type NavItem = { label: string; to: string; icon: LucideIcon; end?: boolean; module?: string };
 type NavGroup = { title: string; items: NavItem[] };
 
 const NAV: NavGroup[] = [
@@ -29,23 +32,23 @@ const NAV: NavGroup[] = [
     items: [
       { label: "Dashboard", to: "/", icon: LayoutDashboard, end: true },
       { label: "Tasks", to: "/tasks", icon: ListChecks },
-      { label: "Habits", to: "/habits", icon: Repeat },
-      { label: "Calendar", to: "/calendar", icon: Calendar },
-      { label: "Weekly Review", to: "/review", icon: ClipboardCheck },
+      { label: "Habits", to: "/habits", icon: Repeat, module: "habits" },
+      { label: "Calendar", to: "/calendar", icon: Calendar, module: "calendar" },
+      { label: "Weekly Review", to: "/review", icon: ClipboardCheck, module: "review" },
     ],
   },
   {
     title: "Insights",
     items: [
-      { label: "Goals", to: "/goals", icon: Flag },
-      { label: "Learn", to: "/learn", icon: GraduationCap },
+      { label: "Goals", to: "/goals", icon: Flag, module: "goals" },
+      { label: "Learn", to: "/learn", icon: GraduationCap, module: "learn" },
       { label: "Areas", to: "/areas", icon: Target },
     ],
   },
   {
     title: "Support",
     items: [
-      { label: "Vault", to: "/vault", icon: Archive },
+      { label: "Vault", to: "/vault", icon: Archive, module: "vault" },
       { label: "Dump", to: "/dump", icon: Inbox },
       { label: "Settings", to: "/settings", icon: Settings },
     ],
@@ -75,6 +78,13 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   // Live count badge for open tasks (shared RTK cache — no extra fetch cost).
   const { data: tasks } = useListTasksQuery();
   const cfg = useVibeConfig();
+  const { isEnabled } = useEnabledModules();
+
+  // Hide nav items whose module is disabled, then drop any group left empty.
+  const groups = NAV.map((g) => ({
+    ...g,
+    items: g.items.filter((item) => !item.module || isEnabled(item.module)),
+  })).filter((g) => g.items.length > 0);
   const openTasks = (tasks ?? []).filter(
     (t) => t.status === "TODO" || t.status === "IN_PROGRESS",
   ).length;
@@ -102,7 +112,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
       {/* Nav groups */}
       <nav className="flex-1 overflow-y-auto px-3 py-3.5">
-        {NAV.map((group) => (
+        {groups.map((group) => (
           <div key={group.title} className="mb-4">
             {!collapsed && (
               <div className="px-2.5 pb-1.5 font-mono text-[10.5px] uppercase tracking-[0.13em] text-tx-3">

@@ -8,7 +8,8 @@ export type GraphNodeType =
   | "HABIT"
   | "TOPIC"
   | "NOTEBOOK"
-  | "NOTE";
+  | "NOTE"
+  | "RESOURCE";
 
 export type GraphEdgeRelation =
   | "AREA_GOAL"
@@ -17,8 +18,11 @@ export type GraphEdgeRelation =
   | "AREA_TASK"
   | "GOAL_PROJECT"
   | "PROJECT_TASK"
+  | "TOPIC_TASK"
   | "TOPIC_NOTEBOOK"
-  | "TOPIC_NOTE";
+  | "TOPIC_NOTE"
+  | "TOPIC_RESOURCE"
+  | "RESOURCE_NOTE";
 
 export interface GraphNode {
   id: string;

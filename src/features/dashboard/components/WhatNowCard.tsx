@@ -17,6 +17,12 @@ const TYPE_ROUTE: Record<string, string> = {
   AREA_FOCUS: "/areas",
   REVIEW: "/review",
   GOAL: "/goals",
+  // New coach suggestion types — deep-link to the closest surface.
+  PROJECT: "/areas", // projects live within areas on web
+  CAPTURE: "/dump",
+  RESOURCE: "/learn",
+  NOTE: "/learn",
+  VAULT: "/vault",
 };
 
 // tone → hero theming. Unknown values fall back to "neutral" for forward-safety.
@@ -76,7 +82,9 @@ function HeroCTA({ action, accent, soft }: { action: PrimaryAction; accent: stri
 
 function SuggestionRow({ s, showUrgency, energetic }: { s: DecisionSuggestion; showUrgency: boolean; energetic: boolean }) {
   const navigate = useNavigate();
-  const clickable = s.refId !== null;
+  // Navigable whenever the type maps to a surface — some types (CAPTURE,
+  // REVIEW) have a null refId but still deep-link to their inbox/screen.
+  const clickable = TYPE_ROUTE[s.type] != null;
 
   const handleClick = () => {
     if (!clickable) return;

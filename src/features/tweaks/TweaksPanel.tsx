@@ -1,13 +1,24 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Check, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { useUpdateSettingsMutation } from "@/features/settings/settingsApi";
 import {
   ACCENTS,
   applyAccent,
   DEFAULT_ACCENT_ID,
   getSavedAccentId,
 } from "./theme";
+
+/** Resolve stored value (either accent id like "blue" OR hex like "#4f8cff") to an accent id. */
+function resolveAccentId(): string {
+  const saved = getSavedAccentId(); // reads localStorage
+  // If it's a known id, use it directly
+  if (ACCENTS.find((a) => a.id === saved)) return saved;
+  // If it's a hex, find by acc value
+  const byHex = ACCENTS.find((a) => a.acc.toLowerCase() === saved.toLowerCase());
+  return byHex?.id ?? DEFAULT_ACCENT_ID;
+}
 
 export function TweaksPanel({
   open,
@@ -16,11 +27,23 @@ export function TweaksPanel({
   open: boolean;
   onClose: () => void;
 }) {
-  const [accentId, setAccentId] = useState(getSavedAccentId);
+  const [accentId, setAccentId] = useState(resolveAccentId);
+  const [updateSettings] = useUpdateSettingsMutation();
+
+  // Keep local state in sync with localStorage (e.g. after server sets it)
+  useEffect(() => {
+    setAccentId(resolveAccentId());
+  }, [open]);
 
   const choose = (id: string) => {
     setAccentId(id);
-    applyAccent(id); // live — repaints :root immediately
+    applyAccent(id); // live repaints :root immediately + saves to localStorage
+
+    // Persist to server (fire-and-forget — swallow errors silently)
+    const accent = ACCENTS.find((a) => a.id === id);
+    if (accent) {
+      updateSettings({ accent: accent.acc }).catch(() => {/* ignore */});
+    }
   };
 
   if (!open) return null;
@@ -53,7 +76,7 @@ export function TweaksPanel({
             Accent color
           </div>
           <p className="mt-1 text-xs text-tx-3">
-            Re-tints the whole interface live.
+            Re-tints the whole interface live. Synced across devices.
           </p>
 
           <div className="mt-4 grid grid-cols-3 gap-3">
@@ -72,8 +95,12 @@ export function TweaksPanel({
                   )}
                 >
                   <span
-                    className="grid size-9 place-items-center rounded-full"
-                    style={{ backgroundColor: a.acc, color: a.ink }}
+                    className="relative grid size-9 place-items-center rounded-full transition-shadow"
+                    style={{
+                      backgroundColor: a.acc,
+                      color: a.ink,
+                      boxShadow: active ? `0 0 12px ${a.acc}88` : "none",
+                    }}
                   >
                     {active && <Check className="size-4" strokeWidth={3} />}
                   </span>
@@ -95,7 +122,7 @@ export function TweaksPanel({
         </div>
 
         <div className="border-t border-line px-5 py-3 text-[11px] text-tx-4">
-          Saved to this browser.
+          Synced to your account &amp; this browser.
         </div>
       </aside>
     </>

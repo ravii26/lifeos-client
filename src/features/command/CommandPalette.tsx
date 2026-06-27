@@ -14,17 +14,24 @@ import {
   Settings,
   SlidersHorizontal,
   Target,
+  Inbox,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { useEnabledModules } from "@/features/settings/useEnabledModules";
 
 interface Command {
   id: string;
   label: string;
-  hint: string;
+  group: string;
+  hint?: string;
   icon: LucideIcon;
   run: () => void;
+  /** If set, the command is hidden when this module is disabled. */
+  module?: string;
 }
+
+const GROUP_ORDER = ["Actions", "Navigate", "Theme"];
 
 export function CommandPalette({
   open,
@@ -36,10 +43,11 @@ export function CommandPalette({
   onOpenTweaks: () => void;
 }) {
   const navigate = useNavigate();
+  const { isEnabled } = useEnabledModules();
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
 
-  const commands = useMemo<Command[]>(() => {
+  const allCommands = useMemo<Command[]>(() => {
     const go = (to: string) => () => {
       navigate(to);
       onClose();
@@ -47,33 +55,43 @@ export function CommandPalette({
     return [
       {
         id: "immersive",
-        label: "Enter Immersive mode",
-        hint: "Focus",
+        label: "Enter Immersive Focus",
+        group: "Actions",
+        hint: "⌘F",
         icon: Focus,
         run: go("/focus"),
+        module: "focus",
       },
-      { id: "dash", label: "Dashboard", hint: "Go", icon: LayoutDashboard, run: go("/") },
-      { id: "tasks", label: "Tasks", hint: "Go", icon: ListChecks, run: go("/tasks") },
-      { id: "habits", label: "Habits", hint: "Go", icon: Repeat, run: go("/habits") },
-      { id: "goals", label: "Goals", hint: "Go", icon: Flag, run: go("/goals") },
-      { id: "calendar", label: "Calendar", hint: "Go", icon: Calendar, run: go("/calendar") },
-      { id: "reviews", label: "Reviews", hint: "Go", icon: ClipboardCheck, run: go("/review") },
-      { id: "learn", label: "Learn", hint: "Go", icon: GraduationCap, run: go("/learn") },
-      { id: "areas", label: "Areas", hint: "Go", icon: Target, run: go("/areas") },
-      { id: "vault", label: "Vault", hint: "Go", icon: Archive, run: go("/vault") },
-      { id: "identity", label: "Identity", hint: "Go", icon: Settings, run: go("/settings") },
       {
         id: "tweaks",
-        label: "Open Tweaks",
-        hint: "Theme",
+        label: "Open Tweaks Panel",
+        group: "Actions",
+        hint: "⌘T",
         icon: SlidersHorizontal,
         run: () => {
           onOpenTweaks();
           onClose();
         },
       },
+      { id: "dash", label: "Dashboard", group: "Navigate", icon: LayoutDashboard, run: go("/") },
+      { id: "areas", label: "Areas", group: "Navigate", icon: Target, run: go("/areas") },
+      { id: "tasks", label: "Tasks", group: "Navigate", icon: ListChecks, run: go("/tasks") },
+      { id: "habits", label: "Habits", group: "Navigate", icon: Repeat, run: go("/habits"), module: "habits" },
+      { id: "goals", label: "Goals", group: "Navigate", icon: Flag, run: go("/goals"), module: "goals" },
+      { id: "calendar", label: "Calendar", group: "Navigate", icon: Calendar, run: go("/calendar"), module: "calendar" },
+      { id: "reviews", label: "Reviews", group: "Navigate", icon: ClipboardCheck, run: go("/review"), module: "review" },
+      { id: "learn", label: "Knowledge", group: "Navigate", icon: GraduationCap, run: go("/learn"), module: "learn" },
+      { id: "vault", label: "Vault", group: "Navigate", icon: Archive, run: go("/vault"), module: "vault" },
+      { id: "dump", label: "Capture Inbox", group: "Navigate", icon: Inbox, run: go("/dump") },
+      { id: "identity", label: "Settings & Identity", group: "Navigate", icon: Settings, run: go("/settings") },
     ];
   }, [navigate, onClose, onOpenTweaks]);
+
+  // Drop commands for modules the user has disabled.
+  const commands = useMemo(
+    () => allCommands.filter((c) => !c.module || isEnabled(c.module)),
+    [allCommands, isEnabled],
+  );
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -81,82 +99,190 @@ export function CommandPalette({
     return commands.filter((c) => c.label.toLowerCase().includes(q));
   }, [commands, query]);
 
-  if (!open) return null;
+  // Group the filtered results
+  const grouped = useMemo(() => {
+    const q = query.trim();
+    // If searching, show flat list
+    if (q) return [{ group: "Results", items: filtered }];
+    const map = new Map<string, Command[]>();
+    for (const c of filtered) {
+      if (!map.has(c.group)) map.set(c.group, []);
+      map.get(c.group)!.push(c);
+    }
+    return GROUP_ORDER
+      .filter((g) => map.has(g))
+      .map((g) => ({ group: g, items: map.get(g)! }));
+  }, [filtered, query]);
 
-  const clampedActive = Math.min(active, Math.max(0, filtered.length - 1));
+  // Flat index for keyboard nav
+  const flatItems = grouped.flatMap((g) => g.items);
+  const clampedActive = Math.min(active, Math.max(0, flatItems.length - 1));
+
+  if (!open) return null;
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      setActive((i) => Math.min(i + 1, filtered.length - 1));
+      setActive((i) => Math.min(i + 1, flatItems.length - 1));
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       setActive((i) => Math.max(i - 1, 0));
     } else if (e.key === "Enter") {
       e.preventDefault();
-      filtered[clampedActive]?.run();
+      flatItems[clampedActive]?.run();
     } else if (e.key === "Escape") {
       onClose();
     }
   };
 
+  let globalIdx = 0;
+
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh]">
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[13vh]">
+      {/* Backdrop */}
       <button
         type="button"
         aria-label="Close"
         onClick={onClose}
-        className="absolute inset-0 bg-black/50 backdrop-blur-[2px]"
+        className="absolute inset-0 bg-black/60 backdrop-blur-[3px]"
       />
 
-      <div className="relative w-full max-w-lg overflow-hidden rounded-xl border border-line-2 bg-surface-1 shadow-2xl">
-        <input
-          autoFocus
-          value={query}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            setActive(0);
-          }}
-          onKeyDown={onKeyDown}
-          placeholder="Jump to…"
-          className="w-full border-b border-line bg-transparent px-4 py-3.5 text-sm text-tx outline-none placeholder:text-tx-4"
-        />
+      {/* Panel */}
+      <div
+        className="relative w-full max-w-[520px] overflow-hidden rounded-2xl shadow-[0_32px_80px_rgba(0,0,0,0.55)]"
+        style={{
+          background: "var(--surface-1)",
+          border: "1px solid var(--line-2)",
+        }}
+      >
+        {/* Search bar */}
+        <div className="flex items-center gap-3 border-b border-line px-4">
+          <svg
+            className="size-4 shrink-0 text-tx-4"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+          >
+            <circle cx="7" cy="7" r="4.5" />
+            <path d="M10.5 10.5L14 14" strokeLinecap="round" />
+          </svg>
+          <input
+            autoFocus
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setActive(0);
+            }}
+            onKeyDown={onKeyDown}
+            placeholder="Search commands and pages…"
+            className="h-12 flex-1 bg-transparent text-[14px] text-tx outline-none placeholder:text-tx-4"
+          />
+          <kbd className="rounded-md border border-line bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] text-tx-4">
+            ESC
+          </kbd>
+        </div>
 
-        <div className="max-h-[320px] overflow-y-auto p-2">
+        {/* Results */}
+        <div className="max-h-[360px] overflow-y-auto p-2">
           {filtered.length === 0 && (
-            <p className="px-3 py-6 text-center text-sm text-tx-4">
-              No matches.
+            <p className="px-3 py-8 text-center text-[13px] text-tx-4">
+              No results for "<span className="text-tx-2">{query}</span>"
             </p>
           )}
-          {filtered.map((c, i) => (
-            <button
-              key={c.id}
-              type="button"
-              onMouseEnter={() => setActive(i)}
-              onClick={c.run}
-              className={cn(
-                "flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm transition-colors",
-                i === clampedActive
-                  ? "bg-surface-3 text-tx"
-                  : "text-tx-2 hover:bg-surface-2",
+
+          {grouped.map(({ group, items }) => (
+            <div key={group}>
+              {/* Group label */}
+              {!query.trim() && (
+                <div className="mb-1 mt-2 px-3 font-mono text-[10px] uppercase tracking-[0.12em] text-tx-4 first:mt-0">
+                  {group}
+                </div>
               )}
-            >
-              <c.icon
-                className={cn(
-                  "size-4 shrink-0",
-                  i === clampedActive && "text-primary",
-                )}
-              />
-              <span className="flex-1">{c.label}</span>
-              <span className="font-mono text-[10px] text-tx-4">{c.hint}</span>
-            </button>
+              {items.map((c) => {
+                const idx = globalIdx++;
+                const isActive = idx === clampedActive;
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onMouseEnter={() => setActive(idx)}
+                    onClick={c.run}
+                    className={cn(
+                      "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-[13px] transition-all duration-100",
+                      isActive
+                        ? "text-acc-ink"
+                        : "text-tx-2 hover:bg-surface-2",
+                    )}
+                    style={
+                      isActive
+                        ? {
+                            background: "var(--acc)",
+                            color: "var(--acc-ink)",
+                          }
+                        : undefined
+                    }
+                  >
+                    <span
+                      className={cn(
+                        "grid size-7 shrink-0 place-items-center rounded-lg transition-colors",
+                        isActive ? "bg-[rgba(0,0,0,0.15)]" : "bg-surface-2",
+                      )}
+                    >
+                      <c.icon className="size-3.5" />
+                    </span>
+                    <span className="flex-1">{c.label}</span>
+                    {c.hint && (
+                      <kbd
+                        className={cn(
+                          "rounded-md px-1.5 py-0.5 font-mono text-[10px] transition-colors",
+                          isActive
+                            ? "bg-[rgba(0,0,0,0.15)] text-[rgba(0,0,0,0.6)]"
+                            : "border border-line bg-surface-2 text-tx-4",
+                        )}
+                      >
+                        {c.hint}
+                      </kbd>
+                    )}
+                    {!c.hint && group === "Navigate" && (
+                      <span
+                        className={cn(
+                          "font-mono text-[10px]",
+                          isActive ? "text-[rgba(0,0,0,0.5)]" : "text-tx-4",
+                        )}
+                      >
+                        Go
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           ))}
         </div>
 
-        <div className="flex items-center gap-3 border-t border-line px-4 py-2 font-mono text-[10px] text-tx-4">
-          <span>↑↓ navigate</span>
-          <span>↵ select</span>
-          <span>esc close</span>
+        {/* Footer */}
+        <div className="flex items-center gap-4 border-t border-line px-4 py-2.5">
+          {[
+            { keys: ["↑", "↓"], label: "navigate" },
+            { keys: ["↵"], label: "select" },
+            { keys: ["ESC"], label: "close" },
+          ].map(({ keys, label }) => (
+            <div key={label} className="flex items-center gap-1.5">
+              {keys.map((k) => (
+                <kbd
+                  key={k}
+                  className="rounded-md border border-line bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] text-tx-4"
+                >
+                  {k}
+                </kbd>
+              ))}
+              <span className="text-[11px] text-tx-4">{label}</span>
+            </div>
+          ))}
+          <div className="ml-auto font-mono text-[10px] text-tx-4">
+            ⌘K
+          </div>
         </div>
       </div>
     </div>

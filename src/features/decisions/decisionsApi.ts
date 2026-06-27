@@ -1,6 +1,16 @@
 import { api } from "@/store/api";
 
-export type SuggestionType = "TASK" | "HABIT" | "AREA_FOCUS" | "REVIEW" | "GOAL";
+export type SuggestionType =
+  | "TASK"
+  | "HABIT"
+  | "AREA_FOCUS"
+  | "REVIEW"
+  | "GOAL"
+  | "PROJECT"
+  | "CAPTURE"
+  | "RESOURCE"
+  | "VAULT"
+  | "NOTE";
 export type Urgency = "HIGH" | "MEDIUM" | "LOW";
 
 export interface DecisionSuggestion {

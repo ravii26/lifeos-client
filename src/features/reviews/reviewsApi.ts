@@ -4,6 +4,7 @@ import type {
   CreateReviewRequest,
   InsightReview,
   Review,
+  ReviewDraft,
   ReviewType,
   UpdateInsightRequest,
   UpdateReviewRequest,
@@ -30,6 +31,14 @@ export const reviewsApi = api.injectEndpoints({
     getReview: builder.query<Review, string>({
       query: (id) => ({ url: `/reviews/${id}`, method: "GET" }),
       providesTags: (_res, _err, id) => [{ type: "Review", id }],
+    }),
+    // Auto-draft generator — pre-fills the create form from real period data.
+    getReviewDraft: builder.query<ReviewDraft, { reviewType: ReviewType }>({
+      query: ({ reviewType }) => ({
+        url: "/reviews/draft",
+        method: "GET",
+        params: { reviewType },
+      }),
     }),
     createReview: builder.mutation<Review, CreateReviewRequest>({
       query: (body) => ({ url: "/reviews", method: "POST", data: body }),
@@ -118,6 +127,7 @@ export const reviewsApi = api.injectEndpoints({
 export const {
   useListReviewsQuery,
   useGetReviewQuery,
+  useLazyGetReviewDraftQuery,
   useCreateReviewMutation,
   useUpdateReviewMutation,
   useDeleteReviewMutation,

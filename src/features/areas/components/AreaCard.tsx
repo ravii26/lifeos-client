@@ -1,4 +1,5 @@
 import { createElement } from "react";
+import { Link } from "react-router-dom";
 import { AlertTriangle, Trash2 } from "lucide-react";
 
 import { Donut } from "@/components/charts/Donut";
@@ -35,6 +36,7 @@ export function AreaCard({ area, stats }: { area: Area; stats: AreaStats }) {
   const showWarning = cfg.showAlerts && stats.score < 40;
 
   const handleDelete = async (e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
     const ok = await confirm({
       title: `Delete "${area.name}"?`,
@@ -47,8 +49,9 @@ export function AreaCard({ area, stats }: { area: Area; stats: AreaStats }) {
   };
 
   return (
-    <div
-      className="card card-pad group relative overflow-hidden"
+    <Link
+      to={`/areas/${area.id}`}
+      className="card card-pad group relative overflow-hidden block transition-colors hover:border-line-2"
       style={showWarning ? { borderColor: "rgba(255,107,129,0.35)", background: "rgba(255,107,129,0.03)" } : undefined}
     >
       <div
@@ -105,6 +108,6 @@ export function AreaCard({ area, stats }: { area: Area; stats: AreaStats }) {
           {!area.isActive && " · inactive"}
         </div>
       ) : null}
-    </div>
+    </Link>
   );
 }

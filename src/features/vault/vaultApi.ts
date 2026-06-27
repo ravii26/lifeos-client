@@ -60,6 +60,15 @@ export const vaultApi = api.injectEndpoints({
         { type: "Vault", id: "LIST" },
       ],
     }),
+
+    // Increments helpfulCount — feeds the coach's "resurface what helps" ranking.
+    markVaultHelpful: builder.mutation<VaultItem, string>({
+      query: (id) => ({ url: `/vault/${id}/helpful`, method: "POST" }),
+      invalidatesTags: (_res, _err, id) => [
+        { type: "Vault", id },
+        { type: "Vault", id: "LIST" },
+      ],
+    }),
   }),
 });
 
@@ -69,4 +78,5 @@ export const {
   useUpdateVaultMutation,
   useDeleteVaultMutation,
   useMarkVaultUsedMutation,
+  useMarkVaultHelpfulMutation,
 } = vaultApi;
