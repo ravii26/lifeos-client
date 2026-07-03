@@ -207,16 +207,12 @@ export function AreaDetailPage() {
     { skip: !areaId },
   );
 
-  const { data: allTasks } = useListTasksQuery();
+  const { data: tasks = [] } = useListTasksQuery(areaId ? { areaId } : undefined);
   const { data: allHabits } = useListHabitsQuery();
   const { data: allGoals } = useListGoalsQuery();
   const { data: allProjects } = useListProjectsQuery();
   const [completeTask] = useCompleteTaskMutation();
 
-  const tasks = useMemo(
-    () => (allTasks ?? []).filter((t) => t.areaId === areaId),
-    [allTasks, areaId],
-  );
   const habits = useMemo(
     () => (allHabits ?? []).filter((h) => h.areaId === areaId),
     [allHabits, areaId],

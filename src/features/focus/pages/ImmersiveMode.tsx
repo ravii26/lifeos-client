@@ -248,7 +248,7 @@ export function ImmersiveMode() {
               className="ds-btn"
               style={{ minWidth: 140 }}
             >
-              <Pause className="size-4" /> Pause &amp; log
+              <Pause className="size-4" /> Stop &amp; log
             </button>
             {activeTask && (
               <button

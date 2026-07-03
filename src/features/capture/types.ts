@@ -1,6 +1,7 @@
 export type CaptureType = "TASK" | "HABIT" | "NOTE" | "RESOURCE" | "VAULT";
 export type CaptureStatus = "PENDING" | "CONVERTED" | "DISMISSED";
 export type WorthCheck = "WORTH_NOW" | "SAVE_LATER" | "NOT_RELEVANT";
+export type CaptureMediaType = "TEXT" | "IMAGE" | "AUDIO";
 
 export interface CaptureMeta {
   title?: string | null;
@@ -31,11 +32,19 @@ export interface Capture {
   worthCheck?: WorthCheck | null;
   worthReason?: string | null;
   meta?: CaptureMeta | null;
+  // Input modality + stored media URL (for image/audio captures).
+  mediaType?: CaptureMediaType;
+  mediaUrl?: string | null;
   createdAt?: string;
 }
 
+// A capture is either typed text, or a media file (image/audio) with an
+// optional caption. The API layer turns the media variant into multipart.
 export interface CreateCaptureRequest {
-  text: string;
+  text?: string;
+  file?: Blob;
+  /** Filename to send with the blob (e.g. "voice.webm", "photo.png"). */
+  fileName?: string;
 }
 
 export interface ConvertCaptureRequest {

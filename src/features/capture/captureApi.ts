@@ -31,7 +31,17 @@ export const captureApi = api.injectEndpoints({
     }),
 
     createCapture: builder.mutation<Capture, CreateCaptureRequest>({
-      query: (body) => ({ url: "/captures", method: "POST", data: body }),
+      query: ({ text, file, fileName }) => {
+        // Media capture → multipart. Axios sets the multipart boundary header
+        // automatically when the body is a FormData instance.
+        if (file) {
+          const form = new FormData();
+          form.append("file", file, fileName ?? "capture");
+          if (text) form.append("text", text);
+          return { url: "/captures", method: "POST", data: form };
+        }
+        return { url: "/captures", method: "POST", data: { text } };
+      },
       invalidatesTags: [{ type: "Capture", id: "LIST" }],
     }),
 
@@ -66,6 +76,7 @@ export const captureApi = api.injectEndpoints({
         { type: "Habit", id: "LIST" },
         { type: "Note", id: "LIST" },
         { type: "Vault", id: "LIST" },
+        { type: "Resource", id: "LIST" },
       ],
     }),
 

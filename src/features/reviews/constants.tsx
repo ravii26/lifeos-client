@@ -7,6 +7,10 @@ export const REVIEW_TYPES: { value: ReviewType; label: string }[] = [
   { value: "YEARLY", label: "Yearly" },
 ];
 
+export const REVIEW_TYPE_LABEL = Object.fromEntries(
+  REVIEW_TYPES.map((t) => [t.value, t.label]),
+) as Record<ReviewType, string>;
+
 export const INSIGHT_STATUSES: {
   value: InsightStatus;
   label: string;

@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Check, Plus } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { localDayKey } from "@/lib/date";
 import type { Area } from "@/features/areas/types";
 import {
   useListHabitLogsQuery,
@@ -10,10 +11,7 @@ import {
 import type { Habit } from "@/features/habits/types";
 
 function todayKey(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
-    d.getDate(),
-  ).padStart(2, "0")}`;
+  return localDayKey(new Date());
 }
 
 /** Compact dashboard habit row: area dot, title, progress bar, log check. */

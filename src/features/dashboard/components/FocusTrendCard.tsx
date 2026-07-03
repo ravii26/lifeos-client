@@ -1,20 +1,19 @@
 import { useMemo } from "react";
 
 import { cn } from "@/lib/utils";
+import { localDayKey } from "@/lib/date";
 import { useDailyFocusQuery } from "@/features/focus/focusApi";
 
-// The /focus/daily endpoint keys buckets by UTC day and omits zero-focus days.
-// To draw a continuous 7-bar strip we generate the last 7 UTC day-keys and
-// fill gaps with 0.
-const utcKey = (d: Date) => d.toISOString().slice(0, 10);
+// The /focus/daily endpoint keys buckets by the user's local day and omits
+// zero-focus days. To draw a continuous 7-bar strip we generate the last 7
+// local day-keys and fill gaps with 0.
+const localKey = localDayKey;
 
-function lastSevenUtcDays(): Date[] {
+function lastSevenLocalDays(): Date[] {
   const now = new Date();
   const out: Date[] = [];
   for (let i = 6; i >= 0; i--) {
-    out.push(
-      new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - i)),
-    );
+    out.push(new Date(now.getFullYear(), now.getMonth(), now.getDate() - i));
   }
   return out;
 }
@@ -32,18 +31,36 @@ export function FocusTrendCard() {
 
   const days = useMemo(() => {
     const byDate = new Map((data ?? []).map((d) => [d.date, d.minutes]));
-    return lastSevenUtcDays().map((d) => ({
-      key: utcKey(d),
-      label: d.toLocaleDateString(undefined, { weekday: "short", timeZone: "UTC" }),
-      minutes: byDate.get(utcKey(d)) ?? 0,
+    return lastSevenLocalDays().map((d) => ({
+      key: localKey(d),
+      label: d.toLocaleDateString(undefined, { weekday: "short" }),
+      minutes: byDate.get(localKey(d)) ?? 0,
     }));
   }, [data]);
 
-  if (isLoading || isError || !data) return null;
+  if (isLoading) {
+    return (
+      <div className="card card-pad">
+        <div className="eyebrow mb-1.5">Last 7 days</div>
+        <p className="text-[12.5px] text-tx-3">Loading focus history…</p>
+      </div>
+    );
+  }
+
+  if (isError || !data) {
+    return (
+      <div className="card card-pad">
+        <div className="eyebrow mb-1.5">Last 7 days</div>
+        <p className="text-[12.5px] text-danger">
+          Couldn't load focus history. Is the backend running?
+        </p>
+      </div>
+    );
+  }
 
   const total = days.reduce((sum, d) => sum + d.minutes, 0);
   const max = Math.max(1, ...days.map((d) => d.minutes));
-  const todayKey = utcKey(new Date());
+  const todayKey = localKey(new Date());
 
   return (
     <div className="card card-pad">

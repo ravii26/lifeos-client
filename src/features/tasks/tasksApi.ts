@@ -8,12 +8,17 @@ import type {
 
 export const tasksApi = api.injectEndpoints({
   endpoints: (builder) => ({
-    listTasks: builder.query<Task[], { status?: TaskStatus } | void>({
+    listTasks: builder.query<Task[], { status?: TaskStatus; areaId?: string } | void>({
       query: (params) => ({
         url: "/tasks",
         method: "GET",
-        ...(params && params.status
-          ? { params: { status: params.status } }
+        ...(params && (params.status || params.areaId)
+          ? {
+              params: {
+                ...(params.status ? { status: params.status } : {}),
+                ...(params.areaId ? { areaId: params.areaId } : {}),
+              },
+            }
           : {}),
       }),
       providesTags: (result) =>

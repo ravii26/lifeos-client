@@ -15,9 +15,9 @@ import {
 import type { ApiError } from "@/lib/api/axiosBaseQuery";
 import { parseApiErrors, type FieldErrorMap } from "@/lib/api/formErrors";
 
-import { useCreateVaultMutation } from "../vaultApi";
+import { useCreateVaultMutation, useUpdateVaultMutation } from "../vaultApi";
 import { MEDIA_TYPES, VAULT_TYPES } from "../constants";
-import type { MediaType, VaultType } from "../types";
+import type { MediaType, VaultItem, VaultType } from "../types";
 
 function parseTags(raw: string): string[] {
   return raw
@@ -26,16 +26,26 @@ function parseTags(raw: string): string[] {
     .filter(Boolean);
 }
 
-export function NewVaultForm({ onClose }: { onClose: () => void }) {
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [vaultType, setVaultType] = useState<VaultType>("MOTIVATION");
-  const [mediaType, setMediaType] = useState<MediaType>("TEXT");
-  const [url, setUrl] = useState("");
-  const [tags, setTags] = useState("");
+export function NewVaultForm({
+  item,
+  onClose,
+}: {
+  /** When provided, the form edits this item instead of creating one. */
+  item?: VaultItem;
+  onClose: () => void;
+}) {
+  const isEdit = !!item;
+  const [title, setTitle] = useState(item?.title ?? "");
+  const [content, setContent] = useState(item?.content ?? "");
+  const [vaultType, setVaultType] = useState<VaultType>(item?.vaultType ?? "MOTIVATION");
+  const [mediaType, setMediaType] = useState<MediaType>(item?.mediaType ?? "TEXT");
+  const [url, setUrl] = useState(item?.url ?? "");
+  const [tags, setTags] = useState(item?.triggerTags?.join(", ") ?? "");
   const [fieldErrors, setFieldErrors] = useState<FieldErrorMap>({});
   const [formError, setFormError] = useState<string | null>(null);
-  const [createVault, { isLoading }] = useCreateVaultMutation();
+  const [createVault, { isLoading: creating }] = useCreateVaultMutation();
+  const [updateVault, { isLoading: updating }] = useUpdateVaultMutation();
+  const isLoading = creating || updating;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,14 +54,28 @@ export function NewVaultForm({ onClose }: { onClose: () => void }) {
     setFormError(null);
     const triggerTags = parseTags(tags);
     try {
-      await createVault({
-        title: title.trim(),
-        content: content.trim(),
-        vaultType,
-        mediaType,
-        ...(url.trim() ? { url: url.trim() } : {}),
-        ...(triggerTags.length ? { triggerTags } : {}),
-      }).unwrap();
+      if (isEdit) {
+        await updateVault({
+          id: item.id,
+          data: {
+            title: title.trim(),
+            content: content.trim(),
+            vaultType,
+            mediaType,
+            ...(url.trim() ? { url: url.trim() } : {}),
+            ...(triggerTags.length ? { triggerTags } : {}),
+          },
+        }).unwrap();
+      } else {
+        await createVault({
+          title: title.trim(),
+          content: content.trim(),
+          vaultType,
+          mediaType,
+          ...(url.trim() ? { url: url.trim() } : {}),
+          ...(triggerTags.length ? { triggerTags } : {}),
+        }).unwrap();
+      }
       onClose();
     } catch (err) {
       const { fields, message } = parseApiErrors(err as ApiError);
@@ -67,7 +91,9 @@ export function NewVaultForm({ onClose }: { onClose: () => void }) {
     >
       <div className="mb-5 flex items-center gap-2">
         <Sparkles className="size-4 text-acc" />
-        <h2 className="text-sm font-[650] text-tx">Add to your vault</h2>
+        <h2 className="text-sm font-[650] text-tx">
+          {isEdit ? "Edit vault item" : "Add to your vault"}
+        </h2>
       </div>
 
       <div className="mb-4 space-y-2">
@@ -188,7 +214,11 @@ export function NewVaultForm({ onClose }: { onClose: () => void }) {
           type="submit"
           disabled={isLoading || !title.trim() || !content.trim()}
         >
-          {isLoading ? "Saving…" : "Save to vault"}
+          {isLoading
+            ? "Saving…"
+            : isEdit
+              ? "Save changes"
+              : "Save to vault"}
         </Button>
         <Button type="button" variant="ghost" onClick={onClose}>
           Cancel

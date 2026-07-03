@@ -7,8 +7,19 @@
  * never stored or shown as toggles.
  */
 
+// behaviour/graph/decisions are listed as core here (not user-toggleable):
+// their toggle never actually gated the underlying telemetry/fetches, only
+// nav visibility, which gave a false impression of control. They stay
+// always-on until real gating is built.
 /** Core modules — always on, never persisted, never gated. */
-export const CORE_MODULES = ["areas", "tasks", "capture"] as const;
+export const CORE_MODULES = [
+  "areas",
+  "tasks",
+  "capture",
+  "behaviour",
+  "graph",
+  "decisions",
+] as const;
 
 export type ModuleKey =
   | (typeof CORE_MODULES)[number]
@@ -26,9 +37,6 @@ export const OPTIONAL_MODULES = [
   "review",
   "learn",
   "identity",
-  "behaviour",
-  "graph",
-  "decisions",
 ] as const;
 
 export type OptionalModuleKey = (typeof OPTIONAL_MODULES)[number];
@@ -51,9 +59,6 @@ export const OPTIONAL_MODULE_META: ModuleMeta[] = [
   { key: "review", label: "Weekly Review", desc: "Reflect & integrate insights" },
   { key: "learn", label: "Learn", desc: "Courses, notes & resources" },
   { key: "identity", label: "Identity", desc: "Purpose, values & vision" },
-  { key: "behaviour", label: "Behaviour", desc: "Your activity signals" },
-  { key: "graph", label: "Graph", desc: "How everything connects" },
-  { key: "decisions", label: "What now", desc: "Your next best move" },
 ];
 
 const CORE_SET = new Set<string>(CORE_MODULES);

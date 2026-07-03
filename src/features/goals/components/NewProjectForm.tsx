@@ -5,22 +5,29 @@ import { Input } from "@/components/ui/input";
 import type { ApiError } from "@/lib/api/axiosBaseQuery";
 import { parseApiErrors, type FieldErrorMap } from "@/lib/api/formErrors";
 
-import { useCreateProjectMutation } from "../goalsApi";
+import { useCreateProjectMutation, useUpdateProjectMutation } from "../goalsApi";
+import type { Project } from "../types";
 
 /** Compact inline form — area & goal are inherited from the parent goal. */
 export function NewProjectForm({
   areaId,
   goalId,
+  project,
   onClose,
 }: {
   areaId: string;
   goalId: string;
+  /** When provided, the form edits this project instead of creating one. */
+  project?: Project;
   onClose: () => void;
 }) {
-  const [title, setTitle] = useState("");
+  const isEdit = !!project;
+  const [title, setTitle] = useState(project?.title ?? "");
   const [fieldErrors, setFieldErrors] = useState<FieldErrorMap>({});
   const [formError, setFormError] = useState<string | null>(null);
-  const [createProject, { isLoading }] = useCreateProjectMutation();
+  const [createProject, { isLoading: creating }] = useCreateProjectMutation();
+  const [updateProject, { isLoading: updating }] = useUpdateProjectMutation();
+  const isLoading = creating || updating;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,8 +35,12 @@ export function NewProjectForm({
     setFieldErrors({});
     setFormError(null);
     try {
-      await createProject({ title: title.trim(), areaId, goalId }).unwrap();
-      setTitle("");
+      if (isEdit) {
+        await updateProject({ id: project.id, data: { title: title.trim() } }).unwrap();
+      } else {
+        await createProject({ title: title.trim(), areaId, goalId }).unwrap();
+        setTitle("");
+      }
       onClose();
     } catch (err) {
       const { fields, message } = parseApiErrors(err as ApiError);
@@ -55,7 +66,7 @@ export function NewProjectForm({
           disabled={isLoading || !title.trim()}
           className="h-8"
         >
-          {isLoading ? "…" : "Add"}
+          {isLoading ? "…" : isEdit ? "Save" : "Add"}
         </Button>
         <Button
           type="button"

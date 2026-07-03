@@ -1,6 +1,6 @@
 import { createElement } from "react";
 import { Link } from "react-router-dom";
-import { AlertTriangle, Trash2 } from "lucide-react";
+import { AlertTriangle, Pencil, Trash2 } from "lucide-react";
 
 import { Donut } from "@/components/charts/Donut";
 import { confirm } from "@/components/ui/confirm";
@@ -30,10 +30,25 @@ function Metric({ label, val }: { label: string; val: string }) {
   );
 }
 
-export function AreaCard({ area, stats }: { area: Area; stats: AreaStats }) {
+export function AreaCard({
+  area,
+  stats,
+  onEdit,
+}: {
+  area: Area;
+  stats: AreaStats;
+  /** Opens the edit form for this area (the page owns the form). */
+  onEdit?: (area: Area) => void;
+}) {
   const [deleteArea, { isLoading }] = useDeleteAreaMutation();
   const cfg = useVibeConfig();
   const showWarning = cfg.showAlerts && stats.score < 40;
+
+  const handleEdit = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onEdit?.(area);
+  };
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -73,15 +88,27 @@ export function AreaCard({ area, stats }: { area: Area; stats: AreaStats }) {
             {area.name}
           </span>
         </div>
-        <button
-          type="button"
-          onClick={handleDelete}
-          disabled={isLoading}
-          title="Delete area"
-          className="grid size-7 place-items-center rounded-md text-tx-4 opacity-0 transition hover:bg-surface-3 hover:text-danger group-hover:opacity-100 disabled:opacity-50"
-        >
-          <Trash2 className="size-3.5" />
-        </button>
+        <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition group-hover:opacity-100">
+          {onEdit && (
+            <button
+              type="button"
+              onClick={handleEdit}
+              title="Edit area"
+              className="grid size-7 place-items-center rounded-md text-tx-4 transition-colors hover:bg-surface-3 hover:text-tx"
+            >
+              <Pencil className="size-3.5" />
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={isLoading}
+            title="Delete area"
+            className="grid size-7 place-items-center rounded-md text-tx-4 transition-colors hover:bg-surface-3 hover:text-danger disabled:opacity-50"
+          >
+            <Trash2 className="size-3.5" />
+          </button>
+        </div>
       </div>
 
       <div className="flex items-center gap-4">

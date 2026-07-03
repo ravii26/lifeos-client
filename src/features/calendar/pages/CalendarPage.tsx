@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Pause, Play, Plus, Repeat } from "lucide-react";
 
 import { Stat } from "@/components/ui/Stat";
+import { localDayKey as dayKey } from "@/lib/date";
 import { useListAreasQuery } from "@/features/areas/areasApi";
 import { useActiveFocus } from "@/features/focus/useActiveFocus";
 import { useListFocusQuery } from "@/features/focus/focusApi";
@@ -13,11 +14,6 @@ import { type CalendarBlock, isOccurrence } from "../types";
 
 const HPX = 56; // pixels per hour row
 
-function dayKey(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
-    d.getDate(),
-  ).padStart(2, "0")}`;
-}
 function dayBounds(d: Date) {
   const start = new Date(d.getFullYear(), d.getMonth(), d.getDate());
   const end = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59);
@@ -46,7 +42,8 @@ export function CalendarPage() {
   const { from, to } = dayBounds(day);
 
   const { data: areas } = useListAreasQuery();
-  const { data: blocks } = useListCalendarQuery({ from, to });
+  const { data: blocks, isLoading: blocksLoading, isError: blocksError } =
+    useListCalendarQuery({ from, to });
   // /focus has no date filter — fetch all and scope to the selected day client-side.
   const { data: allFocus } = useListFocusQuery();
   const focus = useActiveFocus();
@@ -171,6 +168,15 @@ export function CalendarPage() {
           </button>
         </div>
       </div>
+
+      {blocksLoading && (
+        <p className="mb-[var(--gap)] text-sm text-tx-3">Loading your calendar…</p>
+      )}
+      {blocksError && (
+        <p className="mb-[var(--gap)] text-sm text-danger">
+          Couldn't load your calendar. Is the backend running?
+        </p>
+      )}
 
       <div className="mb-[var(--gap)] grid grid-cols-2 gap-[var(--gap)] sm:grid-cols-4">
         {stats.map((x) => (

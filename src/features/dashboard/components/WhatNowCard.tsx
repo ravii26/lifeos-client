@@ -135,7 +135,31 @@ export function WhatNowCard() {
   const { data, isError, isLoading } = useGetDecisionsNowQuery();
   const cfg = useVibeConfig();
 
-  if (isLoading || isError || !data) return null;
+  if (isLoading) {
+    return (
+      <div className="card card-pad">
+        <div className="mb-3 flex items-center gap-2">
+          <Brain className="size-4 text-primary" />
+          <div className="text-sm font-semibold tracking-[-0.01em]">What Now?</div>
+        </div>
+        <p className="text-[12.5px] text-tx-3">Loading your next move…</p>
+      </div>
+    );
+  }
+
+  if (isError || !data) {
+    return (
+      <div className="card card-pad">
+        <div className="mb-3 flex items-center gap-2">
+          <Brain className="size-4 text-primary" />
+          <div className="text-sm font-semibold tracking-[-0.01em]">What Now?</div>
+        </div>
+        <p className="text-[12.5px] text-danger">
+          Couldn't load suggestions. Is the backend running?
+        </p>
+      </div>
+    );
+  }
 
   const theme = toneTheme(data.tone);
   // suggestions[0] is mirrored by the hero CTA; the list is "if you want more".

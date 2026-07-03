@@ -3,13 +3,14 @@ import { Plus, Shield, Sparkles, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Stat } from "@/components/ui/Stat";
+import { CardSkeleton } from "@/components/ui/CardSkeleton";
 import { useLogBehaviorOnMount } from "@/features/behavior/behaviorApi";
 
 import { useListVaultQuery } from "../vaultApi";
 import { VAULT_TYPES } from "../constants";
 import { VaultCard } from "../components/VaultCard";
 import { NewVaultForm } from "../components/NewVaultForm";
-import type { VaultType } from "../types";
+import type { VaultItem, VaultType } from "../types";
 
 export function VaultPage() {
   const [filter, setFilter] = useState<VaultType | "">("");
@@ -19,7 +20,13 @@ export function VaultPage() {
     isError,
   } = useListVaultQuery(filter ? { vaultType: filter } : undefined);
   const [showForm, setShowForm] = useState(false);
+  const [editingItem, setEditingItem] = useState<VaultItem | null>(null);
   useLogBehaviorOnMount("VAULT_ACCESSED");
+
+  const startEdit = (item: VaultItem) => {
+    setShowForm(false);
+    setEditingItem(item);
+  };
 
   const all = items ?? [];
   const timesPulled = all.reduce((s, v) => s + (v.usedCount ?? 0), 0);
@@ -45,7 +52,10 @@ export function VaultPage() {
         </div>
         <button
           type="button"
-          onClick={() => setShowForm((v) => !v)}
+          onClick={() => {
+            setEditingItem(null);
+            setShowForm((v) => !v);
+          }}
           className={cn("ds-btn", showForm ? "ghost" : "acc")}
         >
           {showForm ? (
@@ -94,25 +104,20 @@ export function VaultPage() {
         ))}
       </div>
 
-      {showForm && (
+      {(showForm || editingItem) && (
         <div className="mb-[var(--gap)]">
-          <NewVaultForm onClose={() => setShowForm(false)} />
+          <NewVaultForm
+            key={editingItem?.id ?? "new"}
+            item={editingItem ?? undefined}
+            onClose={() => {
+              setShowForm(false);
+              setEditingItem(null);
+            }}
+          />
         </div>
       )}
 
-      {isLoading && (
-        <div className="grid gap-[var(--gap)] sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="card card-pad animate-pulse">
-              <div className="mb-3 h-4 w-24 rounded bg-surface-3" />
-              <div className="mb-2 h-3.5 w-3/4 rounded bg-surface-3" />
-              <div className="mb-1.5 h-3 w-full rounded bg-surface-2" />
-              <div className="mb-4 h-3 w-5/6 rounded bg-surface-2" />
-              <div className="h-7 w-full rounded bg-surface-2" />
-            </div>
-          ))}
-        </div>
-      )}
+      {isLoading && <CardSkeleton />}
 
       {isError && (
         <div className="card card-pad empty !text-danger">
@@ -123,7 +128,7 @@ export function VaultPage() {
       {all.length > 0 && (
         <div className="grid gap-[var(--gap)] sm:grid-cols-2 lg:grid-cols-3">
           {all.map((item) => (
-            <VaultCard key={item.id} item={item} />
+            <VaultCard key={item.id} item={item} onEdit={startEdit} />
           ))}
         </div>
       )}

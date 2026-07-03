@@ -45,7 +45,7 @@ export function FocusCard() {
             disabled={stopping}
             className="ds-btn"
           >
-            <Pause className="size-3.5" /> Pause &amp; log
+            <Pause className="size-3.5" /> Stop &amp; log
           </button>
         ) : (
           <button

@@ -3,6 +3,7 @@ import { Check, Pause, Pencil, Play, Repeat, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
+import { confirm } from "@/components/ui/confirm";
 import type { Area } from "@/features/areas/types";
 import {
   useStartFocusMutation,
@@ -59,6 +60,15 @@ export function TaskRow({
       await completeTask(task.id);
       toast.success(`"${task.title}" done`);
     }
+  };
+
+  const handleDelete = async () => {
+    if (!(await confirm({
+      title: `Delete "${task.title}"?`,
+      confirmText: "Delete",
+      danger: true,
+    }))) return;
+    deleteTask(task.id);
   };
 
   return (
@@ -163,7 +173,7 @@ export function TaskRow({
 
       <button
         type="button"
-        onClick={() => deleteTask(task.id)}
+        onClick={handleDelete}
         disabled={deleting}
         title="Delete task"
         className="grid size-6 shrink-0 place-items-center rounded-md text-tx-4 opacity-0 transition hover:bg-surface-3 hover:text-danger group-hover:opacity-100 disabled:opacity-50"

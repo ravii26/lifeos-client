@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Plus, Trash2, BookOpen, FileText, BookMarked } from "lucide-react";
+import { ArrowLeft, Pencil, Plus, Trash2, BookOpen, FileText, BookMarked } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { confirm } from "@/components/ui/confirm";
+import { CardSkeleton } from "@/components/ui/CardSkeleton";
 import { useListAreasQuery } from "@/features/areas/areasApi";
 import {
   Select,
@@ -44,9 +45,9 @@ export function TopicDetailPage() {
 
   const { data: topic, isLoading, isError } = useGetTopicQuery(topicId);
   const { data: areas } = useListAreasQuery();
-  const { data: resources } = useListResourcesQuery({ topicId });
-  const { data: notebooks } = useListNotebooksQuery({ topicId });
-  const { data: notes } = useListNotesQuery({ topicId });
+  const { data: resources, isError: resourcesError } = useListResourcesQuery({ topicId });
+  const { data: notebooks, isLoading: notebooksLoading, isError: notebooksError } = useListNotebooksQuery({ topicId });
+  const { data: notes, isLoading: notesLoading, isError: notesError } = useListNotesQuery({ topicId });
 
   const [deleteTopic] = useDeleteTopicMutation();
   const [deleteNotebook] = useDeleteNotebookMutation();
@@ -54,12 +55,22 @@ export function TopicDetailPage() {
 
   const [tab, setTab] = useState<Tab>("Resources");
   const [adding, setAdding] = useState(false);
+  const [editingNotebookId, setEditingNotebookId] = useState<string | null>(null);
 
   const area = areas?.find((a) => a.id === topic?.areaId);
   const mastery = topic?.masteryLevel ? MASTERY_BY_VALUE[topic.masteryLevel] : MASTERY_BY_VALUE.BEGINNER;
   const areaColor = area?.color ?? "var(--acc)";
   const notebookById = new Map((notebooks ?? []).map((n) => [n.id, n]));
   const completedResources = resources?.filter((r) => r.status === "COMPLETED").length ?? 0;
+
+  const handleDeleteNotebook = async (notebook: { id: string; title: string }) => {
+    if (!(await confirm({
+      title: `Delete "${notebook.title}"?`,
+      confirmText: "Delete",
+      danger: true,
+    }))) return;
+    deleteNotebook(notebook.id);
+  };
 
   const handleDeleteTopic = async () => {
     if (!topic) return;
@@ -204,7 +215,11 @@ export function TopicDetailPage() {
             {adding && <NewResourceForm topicId={topicId} onClose={() => setAdding(false)} />}
             {resources && resources.length > 0
               ? resources.map((r) => <ResourceRow key={r.id} resource={r} />)
-              : !adding && <div className="empty">No resources yet — books, courses, articles you're learning from.</div>}
+              : !adding && (
+                  resourcesError
+                    ? <div className="empty text-danger">Couldn't load resources. Try refreshing.</div>
+                    : <div className="empty">No resources yet — books, courses, articles you're learning from.</div>
+                )}
           </div>
         )}
 
@@ -212,44 +227,70 @@ export function TopicDetailPage() {
         {tab === "Notebooks" && (
           <div className="flex flex-col gap-2">
             {adding && <NewNotebookForm topicId={topicId} onClose={() => setAdding(false)} />}
+            {notebooksLoading && !adding && (
+              <CardSkeleton columns="sm:grid-cols-2" lines={2} count={4} />
+            )}
             {notebooks && notebooks.length > 0 ? (
               <div className="grid gap-2 sm:grid-cols-2">
-                {notebooks.map((n) => (
-                  <div
-                    key={n.id}
-                    className="flex items-start justify-between gap-3 rounded-lg border border-line bg-surface-2 px-3.5 py-3 transition-colors hover:border-line-2"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <BookMarked className="size-3.5 shrink-0 text-tx-4" />
-                        <span className="truncate text-sm font-medium">{n.title}</span>
-                      </div>
-                      {n.description && (
-                        <p className="mt-1 truncate text-[12px] text-tx-3">{n.description}</p>
-                      )}
-                      {n.tags && n.tags.length > 0 && (
-                        <div className="mt-1.5 flex flex-wrap gap-1">
-                          {n.tags.map((tag) => (
-                            <span key={tag} className="rounded-full bg-surface-3 px-1.5 py-0.5 text-[10px] text-tx-4">
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => deleteNotebook(n.id)}
-                      title="Delete notebook"
-                      className="grid size-7 shrink-0 place-items-center rounded-md text-tx-4 transition-colors hover:bg-surface-3 hover:text-danger"
+                {notebooks.map((n) =>
+                  n.id === editingNotebookId ? (
+                    <NewNotebookForm
+                      key={n.id}
+                      topicId={topicId}
+                      notebook={n}
+                      onClose={() => setEditingNotebookId(null)}
+                    />
+                  ) : (
+                    <div
+                      key={n.id}
+                      className="flex items-start justify-between gap-3 rounded-lg border border-line bg-surface-2 px-3.5 py-3 transition-colors hover:border-line-2"
                     >
-                      <Trash2 className="size-3.5" />
-                    </button>
-                  </div>
-                ))}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <BookMarked className="size-3.5 shrink-0 text-tx-4" />
+                          <span className="truncate text-sm font-medium">{n.title}</span>
+                        </div>
+                        {n.description && (
+                          <p className="mt-1 truncate text-[12px] text-tx-3">{n.description}</p>
+                        )}
+                        {n.tags && n.tags.length > 0 && (
+                          <div className="mt-1.5 flex flex-wrap gap-1">
+                            {n.tags.map((tag) => (
+                              <span key={tag} className="rounded-full bg-surface-3 px-1.5 py-0.5 text-[10px] text-tx-4">
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex shrink-0 items-center gap-0.5">
+                        <button
+                          type="button"
+                          onClick={() => setEditingNotebookId(n.id)}
+                          title="Edit notebook"
+                          className="grid size-7 place-items-center rounded-md text-tx-4 transition-colors hover:bg-surface-3 hover:text-tx"
+                        >
+                          <Pencil className="size-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteNotebook(n)}
+                          title="Delete notebook"
+                          className="grid size-7 place-items-center rounded-md text-tx-4 transition-colors hover:bg-surface-3 hover:text-danger"
+                        >
+                          <Trash2 className="size-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ),
+                )}
               </div>
             ) : (
-              !adding && <div className="empty">No notebooks yet — group related notes together.</div>
+              !adding && (
+                notebooksError
+                  ? <div className="empty text-danger">Couldn't load notebooks. Try refreshing.</div>
+                  : <div className="empty">No notebooks yet — group related notes together.</div>
+              )
             )}
           </div>
         )}
@@ -259,6 +300,9 @@ export function TopicDetailPage() {
           <div className="flex flex-col gap-2">
             {adding && (
               <NewNoteForm topicId={topicId} notebooks={notebooks ?? []} onClose={() => setAdding(false)} />
+            )}
+            {notesLoading && !adding && (
+              <CardSkeleton columns="sm:grid-cols-2" lines={2} count={4} />
             )}
             {notes && notes.length > 0 ? (
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -272,7 +316,11 @@ export function TopicDetailPage() {
                 ))}
               </div>
             ) : (
-              !adding && <div className="empty">No notes yet — capture concepts, insights, and summaries.</div>
+              !adding && (
+                notesError
+                  ? <div className="empty text-danger">Couldn't load notes. Try refreshing.</div>
+                  : <div className="empty">No notes yet — capture concepts, insights, and summaries.</div>
+              )
             )}
           </div>
         )}

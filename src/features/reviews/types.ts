@@ -71,7 +71,17 @@ export interface CreateReviewRequest {
   aiInsights?: ReviewAiInsights;
 }
 // aiInsights is set only at create-time from a draft; never part of an update.
-export type UpdateReviewRequest = Partial<Omit<CreateReviewRequest, "aiInsights">>;
+// summary/highlights/improvements/userNote are Omit-ted then re-added as
+// nullable so the edit form can send null to clear them (intersection would
+// otherwise drop the `| null`).
+export type UpdateReviewRequest = Partial<
+  Omit<CreateReviewRequest, "aiInsights" | "summary" | "highlights" | "improvements" | "userNote">
+> & {
+  summary?: string | null;
+  highlights?: string | null;
+  improvements?: string | null;
+  userNote?: string | null;
+};
 
 export interface CreateInsightRequest {
   noteId: string;

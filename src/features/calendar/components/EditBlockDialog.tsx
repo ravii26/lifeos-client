@@ -26,23 +26,11 @@ import {
 } from "../calendarApi";
 import { buildRule, describeRule, parseRule, type RecurrenceState } from "../recurrence";
 import { type CalendarBlock, isOccurrence } from "../types";
+import { splitIso, toIso } from "../dateUtils";
 import { RecurrencePicker } from "./RecurrencePicker";
 
 /** Edit scope for a recurring occurrence. */
 type Scope = "THIS" | "FOLLOWING" | "ALL";
-
-// Split an ISO timestamp into local `YYYY-MM-DD` and `HH:MM` fields.
-function splitIso(iso: string): { date: string; time: string } {
-  const d = new Date(iso);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return {
-    date: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`,
-    time: `${pad(d.getHours())}:${pad(d.getMinutes())}`,
-  };
-}
-function toIso(date: string, time: string): string {
-  return new Date(`${date}T${time}`).toISOString();
-}
 
 const SCOPES: { value: Scope; label: string }[] = [
   { value: "THIS", label: "This event" },

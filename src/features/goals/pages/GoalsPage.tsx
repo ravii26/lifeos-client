@@ -4,6 +4,7 @@ import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { CardSkeleton } from "@/components/ui/CardSkeleton";
 import type { ApiError } from "@/lib/api/axiosBaseQuery";
 import { useListAreasQuery } from "@/features/areas/areasApi";
 
@@ -124,7 +125,11 @@ export function GoalsPage() {
         />
       )}
 
-      {isLoading && <p className="mt-8 text-sm text-tx-3">Loading goals…</p>}
+      {isLoading && (
+        <div className="mt-8">
+          <CardSkeleton columns="sm:grid-cols-2" lines={3} />
+        </div>
+      )}
       {isError && (
         <p className="mt-8 text-sm text-danger">
           Couldn't load your goals. Is the backend running?

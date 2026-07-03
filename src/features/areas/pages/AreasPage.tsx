@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Plus } from "lucide-react";
 
 import { Donut } from "@/components/charts/Donut";
+import { CardSkeleton } from "@/components/ui/CardSkeleton";
 import { useLogBehaviorOnMount } from "@/features/behavior/behaviorApi";
 import { useListTasksQuery } from "@/features/tasks/tasksApi";
 import { useListHabitsQuery } from "@/features/habits/habitsApi";
@@ -10,6 +11,7 @@ import { useListGoalsQuery } from "@/features/goals/goalsApi";
 import { useListAreasQuery, useSnapshotAreaScoreMutation } from "../areasApi";
 import { AreaCard, type AreaStats } from "../components/AreaCard";
 import { NewAreaForm } from "../components/NewAreaForm";
+import type { Area } from "../types";
 
 export function AreasPage() {
   const { data: areas, isLoading, isError } = useListAreasQuery();
@@ -17,8 +19,14 @@ export function AreasPage() {
   const { data: habits } = useListHabitsQuery();
   const { data: goals } = useListGoalsQuery();
   const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState<Area | null>(null);
   const [snapshotAreaScore] = useSnapshotAreaScoreMutation();
   useLogBehaviorOnMount("AREA_VIEWED");
+
+  const startEdit = (area: Area) => {
+    setShowForm(false);
+    setEditing(area);
+  };
 
   // A3: persist a score snapshot once per page visit for each scored area.
   useEffect(() => {
@@ -75,20 +83,30 @@ export function AreasPage() {
       <div className="mb-[var(--gap)] flex justify-end">
         <button
           type="button"
-          onClick={() => setShowForm((v) => !v)}
+          onClick={() => {
+            setEditing(null);
+            setShowForm((v) => !v);
+          }}
           className="ds-btn ghost"
         >
           <Plus className="size-3.5" /> New area
         </button>
       </div>
 
-      {showForm && (
+      {(showForm || editing) && (
         <div className="mb-[var(--gap)]">
-          <NewAreaForm onClose={() => setShowForm(false)} />
+          <NewAreaForm
+            key={editing?.id ?? "new"}
+            area={editing ?? undefined}
+            onClose={() => {
+              setShowForm(false);
+              setEditing(null);
+            }}
+          />
         </div>
       )}
 
-      {isLoading && <p className="text-sm text-tx-3">Loading areas…</p>}
+      {isLoading && <CardSkeleton lines={3} />}
       {isError && (
         <p className="text-sm text-danger">
           Couldn't load your areas. Is the backend running?
@@ -128,6 +146,7 @@ export function AreasPage() {
                 key={area.id}
                 area={area}
                 stats={statsByArea.get(area.id)!}
+                onEdit={startEdit}
               />
             ))}
           </div>

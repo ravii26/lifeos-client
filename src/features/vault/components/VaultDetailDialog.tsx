@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { ExternalLink, Heart, Sparkles, Trash2, X } from "lucide-react";
+import { ExternalLink, Heart, Pencil, Sparkles, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { confirm } from "@/components/ui/confirm";
@@ -22,9 +22,12 @@ function formatDate(iso?: string): string | null {
 export function VaultDetailDialog({
   item,
   onClose,
+  onEdit,
 }: {
   item: VaultItem;
   onClose: () => void;
+  /** Closes this dialog and opens the edit form for this item. */
+  onEdit?: (item: VaultItem) => void;
 }) {
   const [deleteVault, { isLoading: deleting }] = useDeleteVaultMutation();
   const [markUsed, { isLoading: pulling }] = useMarkVaultUsedMutation();
@@ -70,6 +73,11 @@ export function VaultDetailDialog({
     } catch {
       toast.error("Couldn't delete that item. Try again.");
     }
+  };
+
+  const handleEdit = () => {
+    onClose();
+    onEdit?.(item);
   };
 
   return (
@@ -180,15 +188,27 @@ export function VaultDetailDialog({
 
           {/* actions */}
           <div className="mt-6 flex items-center justify-between gap-2">
-            <button
-              type="button"
-              onClick={handleDelete}
-              disabled={deleting}
-              className="ds-btn ghost text-danger hover:text-danger disabled:opacity-50"
-            >
-              <Trash2 className="size-3.5" />
-              {deleting ? "Removing…" : "Remove"}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={deleting}
+                className="ds-btn ghost text-danger hover:text-danger disabled:opacity-50"
+              >
+                <Trash2 className="size-3.5" />
+                {deleting ? "Removing…" : "Remove"}
+              </button>
+              {onEdit && (
+                <button
+                  type="button"
+                  onClick={handleEdit}
+                  className="ds-btn ghost"
+                >
+                  <Pencil className="size-3.5" />
+                  Edit
+                </button>
+              )}
+            </div>
             <button
               type="button"
               onClick={handlePull}

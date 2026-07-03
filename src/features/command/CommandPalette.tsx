@@ -83,7 +83,8 @@ export function CommandPalette({
       { id: "learn", label: "Knowledge", group: "Navigate", icon: GraduationCap, run: go("/learn"), module: "learn" },
       { id: "vault", label: "Vault", group: "Navigate", icon: Archive, run: go("/vault"), module: "vault" },
       { id: "dump", label: "Capture Inbox", group: "Navigate", icon: Inbox, run: go("/dump") },
-      { id: "identity", label: "Settings & Identity", group: "Navigate", icon: Settings, run: go("/settings") },
+      { id: "settings", label: "Settings", group: "Navigate", icon: Settings, run: go("/settings") },
+      { id: "identity", label: "Identity", group: "Navigate", icon: Settings, run: go("/identity") },
     ];
   }, [navigate, onClose, onOpenTweaks]);
 

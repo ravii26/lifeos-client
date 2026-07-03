@@ -1,8 +1,22 @@
 import { useRef, useState } from "react";
-import { Check, ChevronDown, ChevronUp, Loader2, Sparkles, Trash2, Zap } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  ChevronUp,
+  ImagePlus,
+  Loader2,
+  Mic,
+  Sparkles,
+  Square,
+  Trash2,
+  Zap,
+} from "lucide-react";
 import { toast } from "sonner";
 
+import { useDictation } from "../useDictation";
+
 import { cn } from "@/lib/utils";
+import { runMutation } from "@/lib/run-mutation";
 import {
   Select,
   SelectContent,
@@ -43,23 +57,78 @@ function CaptureInput() {
   const [createCapture, { isLoading }] = useCreateCaptureMutation();
   const dispatch = useAppDispatch();
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const fileInput = useRef<HTMLInputElement>(null);
+
+  // On-device dictation (Web Speech API). Recognised speech streams into the
+  // textarea so the user can review/edit before submitting — no API key, no
+  // quota, no audio upload. The dictated text is just a normal text capture.
+  const dictation = useDictation();
+  const dictBase = useRef("");
+
+  // Re-poll a few times so the background classification result lands without a
+  // manual refresh.
+  const pollAfterCapture = () => {
+    toast("Captured — AI is sorting…", { icon: "⚡" });
+    timers.current.forEach(clearTimeout);
+    timers.current = [1000, 2500, 4000, 6000].map((ms) =>
+      setTimeout(() => {
+        dispatch(api.util.invalidateTags([{ type: "Capture", id: "LIST" }]));
+      }, ms),
+    );
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = text.trim();
     if (!trimmed) return;
-    await createCapture({ text: trimmed });
-    setText("");
-    toast("Captured — AI is sorting…", { icon: "⚡" });
-    // Classification runs in the background on the server (~1-2s). Poll a few
-    // times so the type + worth rating + auto-convert appear without a manual
-    // refresh.
-    timers.current.forEach(clearTimeout);
-    timers.current = [1000, 2500, 4000].map((ms) =>
-      setTimeout(() => {
-        dispatch(api.util.invalidateTags([{ type: "Capture", id: "LIST" }]));
-      }, ms),
+    await runMutation(
+      createCapture,
+      { text: trimmed },
+      {
+        onSuccess: () => {
+          setText("");
+          pollAfterCapture();
+        },
+        errorMessage: "Couldn't save that capture",
+      },
     );
+  };
+
+  const submitImage = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please pick an image file");
+      return;
+    }
+    await runMutation(
+      createCapture,
+      { file, fileName: file.name, text: text.trim() || undefined },
+      {
+        onSuccess: () => {
+          setText("");
+          pollAfterCapture();
+        },
+        errorMessage: "Couldn't save that capture",
+      },
+    );
+  };
+
+  // Paste an image straight into the textarea.
+  const onPaste = (e: React.ClipboardEvent) => {
+    const img = Array.from(e.clipboardData.files).find((f) => f.type.startsWith("image/"));
+    if (img) {
+      e.preventDefault();
+      void submitImage(img);
+    }
+  };
+
+  const toggleDictation = () => {
+    if (dictation.listening) {
+      dictation.stop();
+      return;
+    }
+    // Append to whatever's already typed.
+    dictBase.current = text ? text.trimEnd() + " " : "";
+    dictation.start((transcript) => setText(dictBase.current + transcript));
   };
 
   return (
@@ -68,30 +137,78 @@ function CaptureInput() {
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
+        onPaste={onPaste}
         onKeyDown={(e) => {
           if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) submit(e as unknown as React.FormEvent);
         }}
-        placeholder="Dump anything — ideas, tasks, links, reminders… the AI will sort it."
+        placeholder="Dump anything — type it, speak it, or snap a photo. The AI will sort it."
         rows={3}
         className="w-full resize-none rounded-[var(--r-sm)] border border-line-2 bg-inset px-3 py-2.5 text-sm text-tx outline-none placeholder:text-tx-4 focus-visible:border-acc-line"
       />
+
+      <input
+        ref={fileInput}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) void submitImage(f);
+          e.target.value = "";
+        }}
+      />
+
       <div className="mt-3 flex items-center justify-between gap-3">
-        <span className="flex items-center gap-1.5 text-[12px] text-tx-4">
-          <Sparkles className="size-3" />
-          AI classifier · ⌘↵ to submit
-        </span>
-        <button
-          type="submit"
-          disabled={isLoading || !text.trim()}
-          className="ds-btn"
-        >
-          {isLoading ? (
-            <Loader2 className="size-3.5 animate-spin" />
-          ) : (
-            <Zap className="size-3.5" />
+        {dictation.listening ? (
+          <span className="flex items-center gap-1.5 text-[12px] font-medium text-acc">
+            <span className="size-2 animate-pulse rounded-full bg-acc" />
+            Listening — speak now, tap mic to stop
+          </span>
+        ) : (
+          <span className="flex items-center gap-1.5 text-[12px] text-tx-4">
+            <Sparkles className="size-3" />
+            AI classifier · ⌘↵ to submit
+          </span>
+        )}
+
+        <div className="flex items-center gap-1.5">
+          {/* Image */}
+          <button
+            type="button"
+            onClick={() => fileInput.current?.click()}
+            disabled={isLoading || dictation.listening}
+            title="Capture a photo or image"
+            className="grid size-9 place-items-center rounded-[var(--r-sm)] border border-line-2 text-tx-3 hover:text-tx disabled:opacity-40"
+          >
+            <ImagePlus className="size-4" />
+          </button>
+          {/* Voice — on-device dictation */}
+          {dictation.supported && (
+            <button
+              type="button"
+              onClick={toggleDictation}
+              disabled={isLoading}
+              title={dictation.listening ? "Stop dictation" : "Dictate (speech to text)"}
+              className={cn(
+                "grid size-9 place-items-center rounded-[var(--r-sm)] border transition",
+                dictation.listening
+                  ? "border-transparent bg-acc text-acc-ink"
+                  : "border-line-2 text-tx-3 hover:text-tx",
+              )}
+            >
+              {dictation.listening ? <Square className="size-3.5" /> : <Mic className="size-4" />}
+            </button>
           )}
-          {isLoading ? "Capturing…" : "Capture"}
-        </button>
+          {/* Text submit */}
+          <button type="submit" disabled={isLoading || dictation.listening || !text.trim()} className="ds-btn">
+            {isLoading ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : (
+              <Zap className="size-3.5" />
+            )}
+            {isLoading ? "Capturing…" : "Capture"}
+          </button>
+        </div>
       </div>
     </form>
   );
@@ -218,18 +335,31 @@ function CaptureCard({ capture }: { capture: Capture }) {
     >
       <div className="flex items-start gap-3">
         <div className="flex-1 min-w-0">
+          {/* Media preview for image/audio captures */}
+          {capture.mediaUrl && capture.mediaType === "IMAGE" && (
+            <img
+              src={capture.mediaUrl}
+              alt={capture.meta?.title ?? "Captured image"}
+              className="mb-2 max-h-44 w-auto rounded-[var(--r-sm)] border border-line-2 object-cover"
+            />
+          )}
+          {capture.mediaUrl && capture.mediaType === "AUDIO" && (
+            <audio src={capture.mediaUrl} controls className="mb-2 h-9 w-full max-w-[280px]" />
+          )}
           {capture.meta?.title && (
             <p className="mb-0.5 text-[13.5px] font-[600] leading-snug text-tx">
               {capture.meta.title}
             </p>
           )}
-          <p className={`mb-2 leading-relaxed text-tx-3 ${capture.meta?.title ? "text-[12px]" : "text-[13.5px] text-tx"}`}>
-            {capture.text}
-          </p>
+          {capture.text && (
+            <p className={`mb-2 leading-relaxed text-tx-3 ${capture.meta?.title ? "text-[12px]" : "text-[13.5px] text-tx"}`}>
+              {capture.text}
+            </p>
+          )}
           {!classified ? (
             <div className="flex items-center gap-1.5 text-[12px] text-tx-4">
               <Loader2 className="size-3 animate-spin" />
-              Sorting…
+              {capture.mediaType && capture.mediaType !== "TEXT" ? "Transcribing…" : "Sorting…"}
             </div>
           ) : (
           <div className="flex flex-wrap items-center gap-2">

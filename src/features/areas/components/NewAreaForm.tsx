@@ -7,16 +7,27 @@ import { cn } from "@/lib/utils";
 import type { ApiError } from "@/lib/api/axiosBaseQuery";
 import { parseApiErrors, type FieldErrorMap } from "@/lib/api/formErrors";
 
-import { useCreateAreaMutation } from "../areasApi";
+import { useCreateAreaMutation, useUpdateAreaMutation } from "../areasApi";
 import { AREA_COLORS, AREA_ICONS } from "../constants";
+import type { Area } from "../types";
 
-export function NewAreaForm({ onClose }: { onClose: () => void }) {
-  const [name, setName] = useState("");
-  const [color, setColor] = useState(AREA_COLORS[0]);
-  const [icon, setIcon] = useState(AREA_ICONS[0].name);
+export function NewAreaForm({
+  area,
+  onClose,
+}: {
+  /** When provided, the form edits this area instead of creating one. */
+  area?: Area;
+  onClose: () => void;
+}) {
+  const isEdit = !!area;
+  const [name, setName] = useState(area?.name ?? "");
+  const [color, setColor] = useState(area?.color ?? AREA_COLORS[0]);
+  const [icon, setIcon] = useState(area?.icon ?? AREA_ICONS[0].name);
   const [fieldErrors, setFieldErrors] = useState<FieldErrorMap>({});
   const [formError, setFormError] = useState<string | null>(null);
-  const [createArea, { isLoading }] = useCreateAreaMutation();
+  const [createArea, { isLoading: creating }] = useCreateAreaMutation();
+  const [updateArea, { isLoading: updating }] = useUpdateAreaMutation();
+  const isLoading = creating || updating;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,7 +35,14 @@ export function NewAreaForm({ onClose }: { onClose: () => void }) {
     setFieldErrors({});
     setFormError(null);
     try {
-      await createArea({ name: name.trim(), color, icon }).unwrap();
+      if (isEdit) {
+        await updateArea({
+          id: area.id,
+          data: { name: name.trim(), color, icon },
+        }).unwrap();
+      } else {
+        await createArea({ name: name.trim(), color, icon }).unwrap();
+      }
       onClose();
     } catch (err) {
       const { fields, message } = parseApiErrors(err as ApiError);
@@ -98,7 +116,13 @@ export function NewAreaForm({ onClose }: { onClose: () => void }) {
 
       <div className="mt-5 flex gap-2">
         <Button type="submit" disabled={isLoading || !name.trim()}>
-          {isLoading ? "Creating…" : "Create area"}
+          {isLoading
+            ? isEdit
+              ? "Saving…"
+              : "Creating…"
+            : isEdit
+              ? "Save changes"
+              : "Create area"}
         </Button>
         <Button type="button" variant="ghost" onClick={onClose}>
           Cancel

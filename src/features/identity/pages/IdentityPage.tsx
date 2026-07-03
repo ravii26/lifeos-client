@@ -1,16 +1,10 @@
-import { useEffect, useState } from "react";
-import { Check } from "lucide-react";
+import { useState } from "react";
+import { Check, Settings as SettingsIcon } from "lucide-react";
+import { Link } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Stat } from "@/components/ui/Stat";
 import type { ApiError } from "@/lib/api/axiosBaseQuery";
 import { parseApiErrors, type FieldErrorMap } from "@/lib/api/formErrors";
@@ -21,8 +15,6 @@ import { useListAreasQuery } from "@/features/areas/areasApi";
 
 import { useGetIdentityQuery, useUpdateIdentityMutation } from "../identityApi";
 import type { Identity } from "../types";
-import { useGetSettingsQuery, useUpdateSettingsMutation } from "@/features/settings/settingsApi";
-import type { FontPreference, StartTab, Vibe } from "@/features/settings/types";
 
 const textareaClass =
   "w-full resize-y rounded-[var(--r-sm)] border border-line-2 bg-inset px-3 py-2 text-sm text-tx outline-none placeholder:text-tx-4 focus-visible:border-acc-line";
@@ -94,9 +86,16 @@ export function IdentityPage() {
         <IdentityForm key={identity?.id ?? "new"} identity={identity ?? null} />
       )}
 
-      <div className="mt-[var(--gap)]">
-        <AppSettingsCard />
-      </div>
+      <Link
+        to="/settings"
+        className="mt-[var(--gap)] flex items-center justify-between rounded-[var(--r-md)] border border-line-2 bg-surface-1 px-4 py-3.5 text-sm text-tx-2 transition hover:border-line-3 hover:text-tx"
+      >
+        <span className="flex items-center gap-2">
+          <SettingsIcon className="size-4" />
+          App preferences — vibe, accent, font & modules
+        </span>
+        <span className="text-tx-4">→</span>
+      </Link>
     </div>
   );
 }
@@ -255,86 +254,6 @@ function IdentityForm({ identity }: { identity: Identity | null }) {
             </span>
           )}
         </div>
-      </div>
-    </form>
-  );
-}
-
-function AppSettingsCard() {
-  const { data: settings } = useGetSettingsQuery();
-  const [updateSettings, { isLoading: saving }] = useUpdateSettingsMutation();
-
-  const [vibe, setVibe] = useState<Vibe>("focused");
-  const [font, setFont] = useState<FontPreference>("inter");
-  const [startTab, setStartTab] = useState<StartTab>("today");
-
-  // Sync form state whenever settings load from the server.
-  useEffect(() => {
-    if (!settings) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setVibe(settings.vibe ?? "focused");
-    setFont(settings.font ?? "inter");
-    setStartTab(settings.startTab ?? "today");
-  }, [settings]);
-
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await updateSettings({ vibe, font, startTab });
-  };
-
-  return (
-    <form onSubmit={handleSave} className="card card-pad">
-      <div className="eyebrow mb-1">Preferences · appearance</div>
-      <div className="card-title mb-4 text-[15px]">App settings</div>
-
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
-        <div className="space-y-2">
-          <label className="text-[13px] font-medium text-tx-2">Vibe</label>
-          <Select value={vibe} onValueChange={(v) => setVibe(v as Vibe)}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="calm">Calm</SelectItem>
-              <SelectItem value="focused">Focused</SelectItem>
-              <SelectItem value="energetic">Energetic</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-[13px] font-medium text-tx-2">Font</label>
-          <Select value={font} onValueChange={(v) => setFont(v as FontPreference)}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="inter">Inter (default)</SelectItem>
-              <SelectItem value="mono">Mono</SelectItem>
-              <SelectItem value="serif">Serif</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-[13px] font-medium text-tx-2">Start tab</label>
-          <Select value={startTab} onValueChange={(v) => setStartTab(v as StartTab)}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="today">Today</SelectItem>
-              <SelectItem value="areas">Areas</SelectItem>
-              <SelectItem value="dump">Dump</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div className="mt-5 flex items-center gap-3">
-        <Button type="submit" disabled={saving}>
-          {saving ? "Saving…" : "Save preferences"}
-        </Button>
       </div>
     </form>
   );

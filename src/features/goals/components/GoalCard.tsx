@@ -46,6 +46,7 @@ export function GoalCard({
 }) {
   const [open, setOpen] = useState(false);
   const [adding, setAdding] = useState(false);
+  const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
   const { data: projects } = useListProjectsQuery({ goalId: goal.id });
   const [updateGoal] = useUpdateGoalMutation();
   const [parkGoal, { isLoading: parking }] = useParkGoalMutation();
@@ -68,6 +69,16 @@ export function GoalCard({
     });
     if (!ok) return;
     deleteGoal(goal.id);
+  };
+
+  const handleDeleteProject = async (project: { id: string; title: string }) => {
+    const ok = await confirm({
+      title: `Delete "${project.title}"?`,
+      confirmText: "Delete",
+      danger: true,
+    });
+    if (!ok) return;
+    deleteProject(project.id);
   };
 
   const handlePark = async () => {
@@ -227,6 +238,17 @@ export function GoalCard({
       {open && (
         <div className="mt-3 space-y-1.5 border-t border-line-2 pt-3">
           {projects?.map((p) => {
+            if (p.id === editingProjectId) {
+              return (
+                <NewProjectForm
+                  key={p.id}
+                  areaId={goal.areaId}
+                  goalId={goal.id}
+                  project={p}
+                  onClose={() => setEditingProjectId(null)}
+                />
+              );
+            }
             const ps = STATUS_BY_VALUE[p.status];
             return (
               <div
@@ -244,7 +266,15 @@ export function GoalCard({
                 </span>
                 <button
                   type="button"
-                  onClick={() => deleteProject(p.id)}
+                  onClick={() => setEditingProjectId(p.id)}
+                  title="Edit project"
+                  className="grid size-5 place-items-center rounded text-tx-4 hover:text-tx"
+                >
+                  <Pencil className="size-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteProject(p)}
                   title="Delete project"
                   className="grid size-5 place-items-center rounded text-tx-4 hover:text-danger"
                 >

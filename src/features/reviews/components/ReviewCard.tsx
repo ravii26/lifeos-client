@@ -1,14 +1,8 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, Sparkles } from "lucide-react";
 
+import { REVIEW_TYPE_LABEL } from "../constants";
 import type { Review } from "../types";
-
-const TYPE_LABEL: Record<string, string> = {
-  DAILY: "Daily",
-  WEEKLY: "Weekly",
-  MONTHLY: "Monthly",
-  YEARLY: "Yearly",
-};
 
 function fmt(iso: string) {
   return new Date(iso).toLocaleDateString(undefined, {
@@ -26,7 +20,7 @@ export function ReviewCard({ review }: { review: Review }) {
       <div className="flex items-start justify-between gap-2">
         <div>
           <span className="font-mono text-[10px] uppercase tracking-[0.13em] text-primary">
-            {TYPE_LABEL[review.reviewType] ?? review.reviewType}
+            {REVIEW_TYPE_LABEL[review.reviewType] ?? review.reviewType}
           </span>
           <div className="text-sm font-semibold">
             {fmt(review.periodStart)} – {fmt(review.periodEnd)}

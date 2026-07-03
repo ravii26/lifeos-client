@@ -3,6 +3,9 @@ import { Check, Flame, Minus, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
+import { runMutation } from "@/lib/run-mutation";
+import { confirm } from "@/components/ui/confirm";
+import { localDayKey as dayKey } from "@/lib/date";
 import type { Area } from "@/features/areas/types";
 import { HabitDots } from "@/components/charts/HabitDots";
 import { useVibeConfig } from "@/features/settings/useVibe";
@@ -13,12 +16,6 @@ import {
   useLogHabitMutation,
 } from "../habitsApi";
 import type { Habit } from "../types";
-
-function dayKey(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
-    d.getDate(),
-  ).padStart(2, "0")}`;
-}
 
 export function HabitCard({
   habit,
@@ -120,39 +117,62 @@ export function HabitCard({
     const amount = Math.max(0, next);
     const completed = measured ? amount >= target : true;
     const wasDone = todayDone;
-    await logHabit({
-      id: habit.id,
-      completed,
-      ...(habit.habitType === "COUNT" ? { count: amount } : {}),
-      ...(habit.habitType === "TIMER" ? { minutes: amount } : {}),
-    });
-    if (completed && !wasDone) {
-      const newStreak = streak + 1;
-      toast.success(
-        newStreak > 1
-          ? `${habit.title} logged · ${newStreak} day streak 🔥`
-          : `${habit.title} logged`,
-      );
-    } else if (measured) {
-      toast.success(`${habit.title} · ${amount}/${target}${unit}`);
-    }
+    await runMutation(
+      logHabit,
+      {
+        id: habit.id,
+        completed,
+        ...(habit.habitType === "COUNT" ? { count: amount } : {}),
+        ...(habit.habitType === "TIMER" ? { minutes: amount } : {}),
+      },
+      {
+        onSuccess: () => {
+          if (completed && !wasDone) {
+            const newStreak = streak + 1;
+            toast.success(
+              newStreak > 1
+                ? `${habit.title} logged · ${newStreak} day streak 🔥`
+                : `${habit.title} logged`,
+            );
+          } else if (measured) {
+            toast.success(`${habit.title} · ${amount}/${target}${unit}`);
+          }
+        },
+        errorMessage: `Couldn't log ${habit.title}`,
+      },
+    );
   };
 
   // Undo today's log (mistaken tap). Upsert completed:false with a zero amount.
   const unlog = async () => {
     if (logging) return;
-    await logHabit({
-      id: habit.id,
-      completed: false,
-      ...(habit.habitType === "COUNT" ? { count: 0 } : {}),
-      ...(habit.habitType === "TIMER" ? { minutes: 0 } : {}),
-    });
-    toast(`${habit.title} unmarked`);
+    await runMutation(
+      logHabit,
+      {
+        id: habit.id,
+        completed: false,
+        ...(habit.habitType === "COUNT" ? { count: 0 } : {}),
+        ...(habit.habitType === "TIMER" ? { minutes: 0 } : {}),
+      },
+      {
+        onSuccess: () => toast(`${habit.title} unmarked`),
+        errorMessage: `Couldn't unmark ${habit.title}`,
+      },
+    );
   };
 
   const toggleBoolean = () => {
     if (logging) return;
     void (todayDone ? unlog() : setLog(1));
+  };
+
+  const handleDelete = async () => {
+    if (!(await confirm({
+      title: `Delete "${habit.title}"?`,
+      confirmText: "Delete",
+      danger: true,
+    }))) return;
+    deleteHabit(habit.id);
   };
 
   return (
@@ -263,7 +283,7 @@ export function HabitCard({
         )}
         <button
           type="button"
-          onClick={() => deleteHabit(habit.id)}
+          onClick={handleDelete}
           disabled={deleting}
           title="Delete habit"
           className="grid size-7 shrink-0 place-items-center rounded-md text-tx-4 opacity-0 transition hover:bg-surface-3 hover:text-danger group-hover:opacity-100"

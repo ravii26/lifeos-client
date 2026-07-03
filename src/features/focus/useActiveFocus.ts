@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { runMutation } from "@/lib/run-mutation";
 import {
   useListFocusQuery,
   useStartFocusMutation,
@@ -48,14 +49,18 @@ export function useActiveFocus() {
     label: formatElapsed(elapsedMs),
     start: async (taskId?: string) => {
       if (starting) return;
-      await startFocus(taskId ? { taskId } : undefined);
-      toast("Focus session started", { icon: "⚡" });
+      await runMutation(startFocus, taskId ? { taskId } : undefined, {
+        onSuccess: () => toast("Focus session started", { icon: "⚡" }),
+        errorMessage: "Couldn't start the focus session",
+      });
     },
     stop: async () => {
       if (!active || stopping) return;
       const elapsed = formatElapsed(Date.now() - new Date(active.startedAt).getTime());
-      await stopFocus(active.id);
-      toast(`Session logged · ${elapsed}`, { icon: "⏸" });
+      await runMutation(stopFocus, active.id, {
+        onSuccess: () => toast(`Session logged · ${elapsed}`, { icon: "⏸" }),
+        errorMessage: "Couldn't stop the focus session",
+      });
     },
     starting,
     stopping,

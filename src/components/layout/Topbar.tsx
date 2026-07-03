@@ -1,8 +1,6 @@
-import { useState } from "react";
-import { Focus, LogOut, Search, SlidersHorizontal } from "lucide-react";
+import { LogOut, Search, SlidersHorizontal } from "lucide-react";
 import { useLocation } from "react-router-dom";
 
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -43,7 +41,6 @@ export function Topbar({
   const title = TITLES[pathname] ?? "LifeOS";
   const { data: settings } = useGetSettingsQuery();
   const [updateSettings] = useUpdateSettingsMutation();
-  const [focusMode, setFocusMode] = useState(false);
 
   const vibe: Vibe = settings?.vibe ?? "focused";
   const handleVibeChange = (v: string) => {
@@ -69,20 +66,6 @@ export function Topbar({
           <SelectItem value="energetic">Energetic</SelectItem>
         </SelectContent>
       </Select>
-
-      {/* Focus Mode toggle. */}
-      <button
-        type="button"
-        onClick={() => setFocusMode((v) => !v)}
-        className={cn(
-          "flex items-center gap-1.5 rounded-[var(--r-sm)] border px-2.5 py-1.5 text-xs font-medium transition-colors",
-          focusMode
-            ? "border-acc-line bg-acc-soft text-primary"
-            : "border-line bg-surface-2 text-tx-2 hover:border-line-2 hover:text-tx",
-        )}
-      >
-        <Focus className="size-3.5" /> Focus Mode
-      </button>
 
       {/* Command palette trigger (also opens with ⌘K). */}
       <button

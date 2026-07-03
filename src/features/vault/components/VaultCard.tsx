@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ExternalLink, Heart, Sparkles, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { confirm } from "@/components/ui/confirm";
 import {
   useDeleteVaultMutation,
   useMarkVaultHelpfulMutation,
@@ -38,7 +39,14 @@ function timeAgo(iso?: string): string | null {
   return val <= 0 ? "now" : `${val}${unit} ago`;
 }
 
-export function VaultCard({ item }: { item: VaultItem }) {
+export function VaultCard({
+  item,
+  onEdit,
+}: {
+  item: VaultItem;
+  /** Opens the edit form for this item (the page owns the form). */
+  onEdit?: (item: VaultItem) => void;
+}) {
   const [open, setOpen] = useState(false);
   const [deleteVault, { isLoading: deleting }] = useDeleteVaultMutation();
   const [markUsed, { isLoading: pulling }] = useMarkVaultUsedMutation();
@@ -67,6 +75,11 @@ export function VaultCard({ item }: { item: VaultItem }) {
   };
 
   const handleDelete = async () => {
+    if (!(await confirm({
+      title: `Delete "${item.title}"?`,
+      confirmText: "Delete",
+      danger: true,
+    }))) return;
     try {
       await deleteVault(item.id).unwrap();
       toast(`"${item.title}" removed from vault`);
@@ -207,7 +220,13 @@ export function VaultCard({ item }: { item: VaultItem }) {
       </div>
     </div>
 
-    {open && <VaultDetailDialog item={item} onClose={() => setOpen(false)} />}
+    {open && (
+      <VaultDetailDialog
+        item={item}
+        onClose={() => setOpen(false)}
+        onEdit={onEdit}
+      />
+    )}
     </>
   );
 }

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ChevronDown, ExternalLink, Trash2, Star } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { confirm } from "@/components/ui/confirm";
 import {
   Select,
   SelectContent,
@@ -54,6 +55,15 @@ export function ResourceRow({ resource }: { resource: Resource }) {
       },
     });
     setShowProgress(false);
+  };
+
+  const handleDelete = async () => {
+    if (!(await confirm({
+      title: `Delete "${resource.title}"?`,
+      confirmText: "Delete",
+      danger: true,
+    }))) return;
+    deleteResource(resource.id);
   };
 
   return (
@@ -149,7 +159,7 @@ export function ResourceRow({ resource }: { resource: Resource }) {
 
         <button
           type="button"
-          onClick={() => deleteResource(resource.id)}
+          onClick={handleDelete}
           disabled={deleting}
           title="Delete resource"
           className="grid size-7 shrink-0 place-items-center rounded-md text-tx-4 transition-colors hover:bg-surface-3 hover:text-danger disabled:opacity-50"

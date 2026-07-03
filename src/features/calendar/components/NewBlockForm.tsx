@@ -17,11 +17,8 @@ import type { Area } from "@/features/areas/types";
 
 import { useCreateCalendarMutation } from "../calendarApi";
 import { buildRule, NO_RECURRENCE, type RecurrenceState } from "../recurrence";
+import { toIso } from "../dateUtils";
 import { RecurrencePicker } from "./RecurrencePicker";
-
-function toIso(date: string, time: string): string {
-  return new Date(`${date}T${time}`).toISOString();
-}
 
 export function NewBlockForm({
   date,
