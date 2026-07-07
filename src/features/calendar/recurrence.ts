@@ -7,7 +7,7 @@
  * gracefully describes anything else.
  */
 
-export type Freq = "NONE" | "DAILY" | "WEEKLY" | "MONTHLY";
+export type Freq = "NONE" | "DAILY" | "WEEKLY" | "MONTHLY" | "UNSUPPORTED";
 
 // iCal weekday codes, indexed to match JS Date.getDay() (0 = Sunday).
 const ICAL_DAYS = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"] as const;
@@ -37,6 +37,10 @@ export const WEEKDAY_ORDER: IcalDay[] = [
 export interface RecurrenceState {
   freq: Freq;
   byDay: IcalDay[];
+  /** Original RRULE string, kept only when `freq === "UNSUPPORTED"` so an
+   * untouched custom rule (e.g. set from mobile) round-trips instead of
+   * being silently replaced with `NONE` by this UI's limited vocabulary. */
+  raw?: string;
 }
 
 export const NO_RECURRENCE: RecurrenceState = { freq: "NONE", byDay: [] };
@@ -62,6 +66,8 @@ export function buildRule(state: RecurrenceState): string | undefined {
     }
     case "MONTHLY":
       return "FREQ=MONTHLY";
+    case "UNSUPPORTED":
+      return state.raw;
     case "NONE":
     default:
       return undefined;
@@ -85,16 +91,39 @@ export function parseRule(rule: string | null | undefined): RecurrenceState {
       ) as IcalDay[])
     : [];
 
+  // Keys this UI's vocabulary actually accounts for, per FREQ. Anything else
+  // present in the rule (INTERVAL, COUNT, UNTIL, BYMONTHDAY, WKST, an
+  // unrecognized BYDAY token, ...) means this UI would silently drop
+  // information it can't represent, so treat the whole rule as unsupported.
+  const recognizedKeys: Record<string, Set<string>> = {
+    DAILY: new Set(["FREQ"]),
+    WEEKLY: new Set(["FREQ", "BYDAY"]),
+    MONTHLY: new Set(["FREQ"]),
+  };
+  const keys = Object.keys(parts);
+  const allKeysRecognized =
+    !!freq && !!recognizedKeys[freq] && keys.every((k) => recognizedKeys[freq]!.has(k));
+  const byDayFullyRecognized =
+    !parts.BYDAY || byDay.length === parts.BYDAY.split(",").length;
+
   switch (freq) {
     case "DAILY":
-      return { freq: "DAILY", byDay: [] };
+      if (allKeysRecognized) return { freq: "DAILY", byDay: [] };
+      break;
     case "WEEKLY":
-      return { freq: "WEEKLY", byDay: orderDays(byDay) };
+      if (allKeysRecognized && byDayFullyRecognized) {
+        return { freq: "WEEKLY", byDay: orderDays(byDay) };
+      }
+      break;
     case "MONTHLY":
-      return { freq: "MONTHLY", byDay: [] };
-    default:
-      return { ...NO_RECURRENCE };
+      if (allKeysRecognized) return { freq: "MONTHLY", byDay: [] };
+      break;
   }
+  // A recurrence this UI can't fully express (e.g. a custom rule set from
+  // mobile with INTERVAL/COUNT/UNTIL/BYMONTHDAY, or an unrecognized FREQ) —
+  // keep the raw string so an untouched save round-trips it instead of
+  // silently overwriting or truncating it.
+  return { freq: "UNSUPPORTED", byDay: [], raw: rule };
 }
 
 /** Human-readable summary, e.g. "Weekly on Mon, Wed, Fri". */
@@ -109,6 +138,8 @@ export function describeRule(rule: string | null | undefined): string {
         : "Weekly";
     case "MONTHLY":
       return "Monthly";
+    case "UNSUPPORTED":
+      return "Custom recurrence";
     default:
       return "Does not repeat";
   }

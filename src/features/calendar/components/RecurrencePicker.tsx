@@ -53,6 +53,14 @@ export function RecurrencePicker({
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
+          {value.freq === "UNSUPPORTED" && (
+            // Not a real choice — shown only so the trigger displays the
+            // current (unsupported) rule instead of looking blank. Disabled
+            // so it can't be re-selected once the user picks something else.
+            <SelectItem value="UNSUPPORTED" disabled>
+              Custom (set elsewhere)
+            </SelectItem>
+          )}
           {FREQ_OPTIONS.map((o) => (
             <SelectItem key={o.value} value={o.value}>
               {o.label}
@@ -60,6 +68,12 @@ export function RecurrencePicker({
           ))}
         </SelectContent>
       </Select>
+      {value.freq === "UNSUPPORTED" && (
+        <p className="text-xs text-tx-3">
+          This event uses a custom recurrence rule the web app can't edit directly.
+          Picking an option above replaces it.
+        </p>
+      )}
 
       {value.freq === "WEEKLY" && (
         <div className="flex flex-wrap gap-1.5 pt-1">
