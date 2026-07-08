@@ -18,6 +18,7 @@ import { TaskRow } from "@/features/tasks/components/TaskRow";
 import { useListHabitsQuery } from "@/features/habits/habitsApi";
 import { useActiveFocus } from "@/features/focus/useActiveFocus";
 
+import { ActiveProjectsCard } from "../components/ActiveProjectsCard";
 import { FocusCard } from "../components/FocusCard";
 import { FocusTrendCard } from "../components/FocusTrendCard";
 import { QuickHabitRow } from "../components/QuickHabitRow";
@@ -357,6 +358,12 @@ export function DashboardPage() {
           </div>
           <FocusTrendCard />
         </div>
+      </div>
+
+      {/* Row 2.5: cross-goal active projects — the same "what's stalling" view
+          the AI recommender already computes for itself, surfaced directly. */}
+      <div className="mt-[var(--gap)]">
+        <ActiveProjectsCard />
       </div>
 
       {/* Row 3: today + quick habits */}

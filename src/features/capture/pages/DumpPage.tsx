@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { confirm } from "@/components/ui/confirm";
 import {
   Check,
   ChevronDown,
@@ -328,6 +329,16 @@ function CaptureCard({ capture }: { capture: Capture }) {
   const pct = Math.round((capture.confidence ?? 0) * 100);
   const worthNow = capture.worthCheck === "WORTH_NOW";
 
+  const handleDismiss = async () => {
+    if (!(await confirm({
+      title: "Dismiss this capture?",
+      description: "It hasn't been converted into a task, note, or anything else yet — dismissing it deletes it for good.",
+      confirmText: "Dismiss",
+      danger: true,
+    }))) return;
+    deleteCapture(capture.id);
+  };
+
   return (
     <div
       className="card card-pad"
@@ -436,7 +447,7 @@ function CaptureCard({ capture }: { capture: Capture }) {
           )}
           <button
             type="button"
-            onClick={() => deleteCapture(capture.id)}
+            onClick={handleDismiss}
             disabled={deleting}
             title="Dismiss"
             className="grid size-7 place-items-center rounded-md text-tx-4 hover:text-danger disabled:opacity-50"

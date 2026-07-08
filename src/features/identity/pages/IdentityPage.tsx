@@ -41,7 +41,7 @@ export function IdentityPage() {
     <div className="page rise" style={{ maxWidth: 920 }}>
       <div className="page-head">
         <div className="eyebrow">Account</div>
-        <h1 className="page-title">Settings</h1>
+        <h1 className="page-title">Identity</h1>
         <div className="page-sub">
           Your profile, identity compass, and lifetime momentum.
         </div>

@@ -1,5 +1,5 @@
 import { LogOut, Search, SlidersHorizontal } from "lucide-react";
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -9,8 +9,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { logout } from "@/features/auth/authSlice";
-import { useAppDispatch } from "@/store/hooks";
+import { logout, selectCurrentUser } from "@/features/auth/authSlice";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { FocusTimer } from "@/features/focus/components/FocusTimer";
 import { useGetSettingsQuery, useUpdateSettingsMutation } from "@/features/settings/settingsApi";
 import type { Vibe } from "@/features/settings/types";
@@ -27,6 +27,7 @@ const TITLES: Record<string, string> = {
   "/vault": "Vault",
   "/dump": "Dump",
   "/settings": "Settings",
+  "/identity": "Identity",
 };
 
 export function Topbar({
@@ -41,6 +42,8 @@ export function Topbar({
   const title = TITLES[pathname] ?? "LifeOS";
   const { data: settings } = useGetSettingsQuery();
   const [updateSettings] = useUpdateSettingsMutation();
+  const user = useAppSelector(selectCurrentUser);
+  const initial = user?.name?.[0]?.toUpperCase() ?? "?";
 
   const vibe: Vibe = settings?.vibe ?? "focused";
   const handleVibeChange = (v: string) => {
@@ -88,6 +91,16 @@ export function Topbar({
       >
         <SlidersHorizontal className="size-4" />
       </Button>
+
+      {/* Profile / identity entry point — previously only reachable via ⌘K. */}
+      <Link
+        to="/identity"
+        title="Your profile & identity"
+        className="grid size-8 shrink-0 place-items-center rounded-full text-xs font-bold text-[var(--acc-ink)] transition-opacity hover:opacity-85"
+        style={{ background: "linear-gradient(135deg, var(--acc), var(--health))" }}
+      >
+        {initial}
+      </Link>
 
       <Button
         variant="ghost"
