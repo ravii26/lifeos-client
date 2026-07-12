@@ -40,7 +40,7 @@ export function ParkChooser({
         type="button"
         aria-label="Cancel"
         onClick={onCancel}
-        className="absolute inset-0 bg-black/55 backdrop-blur-[2px]"
+        className="absolute inset-0 bg-black/55"
       />
 
       <div

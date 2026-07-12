@@ -50,8 +50,8 @@ export function IdentityPage() {
       {/* Profile header */}
       <div className="card card-pad mb-[var(--gap)] flex items-center gap-4">
         <div
-          className="grid size-[60px] shrink-0 place-items-center rounded-2xl text-2xl font-extrabold text-[var(--acc-ink)]"
-          style={{ background: "linear-gradient(135deg, var(--acc), var(--health))" }}
+          className="grid size-[60px] shrink-0 place-items-center border-2 border-tx text-2xl font-extrabold text-[var(--acc-ink)]"
+          style={{ background: "var(--acc)" }}
         >
           {initial}
         </div>

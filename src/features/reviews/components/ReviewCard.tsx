@@ -1,15 +1,11 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, Sparkles } from "lucide-react";
 
+import { formatShortDate } from "@/lib/date";
 import { REVIEW_TYPE_LABEL } from "../constants";
 import type { Review } from "../types";
 
-function fmt(iso: string) {
-  return new Date(iso).toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-  });
-}
+const fmt = (iso: string) => formatShortDate(new Date(iso));
 
 export function ReviewCard({ review }: { review: Review }) {
   return (

@@ -77,10 +77,7 @@ export function ActiveProjectsCard() {
       <div className="mb-1.5 flex items-center justify-between">
         <div className="eyebrow">In motion</div>
         {stalledCount > 0 && (
-          <span
-            className="chip border-transparent"
-            style={{ color: "#ff6b81", background: "rgba(255,107,129,0.1)" }}
-          >
+          <span className="chip" style={{ color: "var(--danger)", borderColor: "var(--danger)" }}>
             {stalledCount} stalled
           </span>
         )}
@@ -107,12 +104,12 @@ export function ActiveProjectsCard() {
                 className={cn(
                   "flex items-center gap-2.5 rounded-[var(--r-sm)] border px-3 py-2",
                   stalled
-                    ? "border-[rgba(255,107,129,0.3)] bg-[rgba(255,107,129,0.04)]"
+                    ? "border-danger/30 bg-danger/5"
                     : "border-line bg-surface-2",
                 )}
               >
                 {stalled ? (
-                  <AlertTriangle className="size-3.5 shrink-0 text-[#ff6b81]" />
+                  <AlertTriangle className="size-3.5 shrink-0 text-danger" />
                 ) : (
                   <span
                     className="size-1.5 shrink-0 rounded-full"

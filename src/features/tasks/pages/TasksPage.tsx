@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/select";
 import { useListAreasQuery } from "@/features/areas/areasApi";
 import { useVibeConfig } from "@/features/settings/useVibe";
+import { runMutation } from "@/lib/run-mutation";
 
 import {
   useCompleteTaskMutation,
@@ -65,8 +66,11 @@ export function TasksPage() {
 
   const quickAdd = () => {
     if (!draft.trim()) return;
-    createTask({ title: draft.trim(), ...(draftArea ? { areaId: draftArea } : {}) });
-    setDraft("");
+    runMutation(
+      createTask,
+      { title: draft.trim(), ...(draftArea ? { areaId: draftArea } : {}) },
+      { onSuccess: () => setDraft(""), errorMessage: "Couldn't create task" },
+    );
   };
 
   const stats = [
@@ -125,21 +129,22 @@ export function TasksPage() {
 
       {/* Top priority spotlight */}
       {top && (
-        <div className="card raised card-pad relative mb-[var(--gap)] overflow-hidden">
-          <div
-            className="pointer-events-none absolute inset-0"
-            style={{
-              background:
-                "radial-gradient(80% 100% at 0 0, var(--acc-soft), transparent 60%)",
-            }}
-          />
+        <div
+          className="card raised card-pad relative mb-[var(--gap)] overflow-hidden"
+          style={{ borderLeft: "5px solid var(--acc)" }}
+        >
           <div className="relative">
-            <div className="eyebrow mb-2 text-primary">★ Top priority</div>
+            <div className="eyebrow mb-2 flex items-center gap-1.5 text-acc">
+              <span className="size-1.5 rounded-full bg-acc" />
+              Top priority
+            </div>
             <div className="h-display mb-3.5 text-[19px]">{top.title}</div>
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => completeTask(top.id)}
+                onClick={() =>
+                  runMutation(completeTask, top.id, { errorMessage: "Couldn't complete task" })
+                }
                 className="ds-btn acc sm"
               >
                 <Check className="size-3" /> Mark done

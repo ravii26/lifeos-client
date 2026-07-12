@@ -94,7 +94,7 @@ export function VaultPage() {
             onClick={() => setFilter(v.value)}
             style={
               filter === v.value
-                ? { background: v.accent, borderColor: "transparent", color: "#0a0b0d" }
+                ? { background: v.accent, borderColor: "transparent", color: "#fdfaf3" }
                 : undefined
             }
           >

@@ -3,6 +3,7 @@ import { ExternalLink, Heart, Sparkles, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { confirm } from "@/components/ui/confirm";
+import { timeAgo } from "@/lib/date";
 import {
   useDeleteVaultMutation,
   useMarkVaultHelpfulMutation,
@@ -11,33 +12,6 @@ import {
 import { MEDIA_TYPE_BY_VALUE, VAULT_TYPE_BY_VALUE } from "../constants";
 import type { VaultItem } from "../types";
 import { VaultDetailDialog } from "./VaultDetailDialog";
-
-function timeAgo(iso?: string): string | null {
-  if (!iso) return null;
-  const then = new Date(iso).getTime();
-  if (Number.isNaN(then)) return null;
-  const secs = Math.round((Date.now() - then) / 1000);
-  const units: [number, string][] = [
-    [60, "s"],
-    [60, "m"],
-    [24, "h"],
-    [7, "d"],
-    [4.345, "w"],
-    [12, "mo"],
-    [Number.POSITIVE_INFINITY, "y"],
-  ];
-  let val = secs;
-  let unit = "s";
-  for (const [step, label] of units) {
-    if (Math.abs(val) < step) {
-      unit = label;
-      break;
-    }
-    val = Math.round(val / step);
-    unit = label;
-  }
-  return val <= 0 ? "now" : `${val}${unit} ago`;
-}
 
 export function VaultCard({
   item,
@@ -59,7 +33,7 @@ export function VaultCard({
   const handlePull = async () => {
     try {
       await markUsed(item.id).unwrap();
-      toast(`"${item.title}" pulled from vault`, { icon: "✨" });
+      toast(`"${item.title}" pulled from vault`);
     } catch {
       toast.error("Couldn't pull that item. Try again.");
     }
@@ -68,7 +42,7 @@ export function VaultCard({
   const handleHelped = async () => {
     try {
       await markHelpful(item.id).unwrap();
-      toast(`Glad "${item.title}" helped`, { icon: "💚" });
+      toast(`Glad "${item.title}" helped`);
     } catch {
       toast.error("Couldn't record that. Try again.");
     }
@@ -108,18 +82,9 @@ export function VaultCard({
         }
       }}
       aria-label={`Open "${item.title}"`}
-      className="card card-pad group relative flex cursor-pointer flex-col overflow-hidden transition duration-200 hover:-translate-y-0.5 hover:border-line-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acc-line"
-      style={{ borderLeft: `3px solid ${meta.accent}` }}
+      className="card card-pad group relative flex cursor-pointer flex-col overflow-hidden transition duration-150 hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acc-line"
+      style={{ borderLeft: `5px solid ${meta.accent}` }}
     >
-      {/* soft type-tinted glow on hover */}
-      <span
-        aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-        style={{
-          background: `radial-gradient(120% 80% at 0% 0%, ${meta.accent}12, transparent 60%)`,
-        }}
-      />
-
       <div className="relative mb-2.5 flex items-center justify-between gap-2">
         <span
           className="chip border-transparent"

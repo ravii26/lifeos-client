@@ -37,6 +37,7 @@ export const OPTIONAL_MODULES = [
   "review",
   "learn",
   "identity",
+  "library",
 ] as const;
 
 export type OptionalModuleKey = (typeof OPTIONAL_MODULES)[number];
@@ -59,6 +60,7 @@ export const OPTIONAL_MODULE_META: ModuleMeta[] = [
   { key: "review", label: "Weekly Review", desc: "Reflect & integrate insights" },
   { key: "learn", label: "Learn", desc: "Courses, notes & resources" },
   { key: "identity", label: "Identity", desc: "Purpose, values & vision" },
+  { key: "library", label: "Library", desc: "Ask questions of your documents" },
 ];
 
 const CORE_SET = new Set<string>(CORE_MODULES);

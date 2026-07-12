@@ -9,26 +9,21 @@ export function FocusCard() {
   const { active, label, start, stop, starting, stopping } = useActiveFocus();
 
   return (
-    <div className="card raised card-pad relative flex flex-col overflow-hidden">
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background: active
-            ? "radial-gradient(90% 80% at 100% 0%, var(--acc-soft), transparent 60%)"
-            : "none",
-        }}
-      />
+    <div
+      className="card raised card-pad relative flex flex-col overflow-hidden"
+      style={active ? { borderTop: "5px solid var(--acc)" } : undefined}
+    >
       <div className="relative flex items-center justify-between">
         <div className="eyebrow">Focus work</div>
         {active && (
-          <span className="chip dot border-acc-line text-primary">Live</span>
+          <span className="chip dot border-acc-line text-acc">Live</span>
         )}
       </div>
 
       <div
         className={cn(
-          "relative my-1.5 mt-3.5 font-mono text-[56px] font-semibold leading-none tracking-[-0.03em]",
-          active ? "text-primary" : "text-tx",
+          "relative my-1.5 mt-3.5 font-display text-[56px] font-[560] leading-none [font-variant-numeric:tabular-nums]",
+          active ? "text-acc" : "text-tx",
         )}
       >
         {label}

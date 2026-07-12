@@ -1,4 +1,5 @@
 import { api } from "@/store/api";
+import { normalizeAreaColor } from "./constants";
 import type { Area, AreaScoreSnapshot, AreaTrendsResult, CreateAreaRequest, UpdateAreaRequest } from "./types";
 
 /**
@@ -11,6 +12,10 @@ export const areasApi = api.injectEndpoints({
   endpoints: (builder) => ({
     listAreas: builder.query<Area[], void>({
       query: () => ({ url: "/areas", method: "GET" }),
+      // Legacy accounts may hold pre-redesign neon colors — normalize once
+      // here so every consumer renders the print-ink palette.
+      transformResponse: (areas: Area[]) =>
+        areas.map((a) => ({ ...a, color: normalizeAreaColor(a.color) })),
       providesTags: (result) =>
         result
           ? [

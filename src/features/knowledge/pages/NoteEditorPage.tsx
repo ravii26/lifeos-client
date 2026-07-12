@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { runMutation } from "@/lib/run-mutation";
 import {
   Select,
   SelectContent,
@@ -145,17 +146,25 @@ export function NoteEditorPage() {
 
   const save = useCallback(async () => {
     if (!noteId || !dirty) return;
-    await updateNote({
-      id: noteId,
-      data: {
-        title: dTitle.trim() || note?.title,
-        content: dHtml,
-        noteType: dType,
-        ...(dNotebook ? { notebookId: dNotebook } : {}),
+    await runMutation(
+      updateNote,
+      {
+        id: noteId,
+        data: {
+          title: dTitle.trim() || note?.title,
+          content: dHtml,
+          noteType: dType,
+          ...(dNotebook ? { notebookId: dNotebook } : {}),
+        },
       },
-    });
-    setSavedAt(new Date());
-    setDirty(false);
+      {
+        onSuccess: () => {
+          setSavedAt(new Date());
+          setDirty(false);
+        },
+        errorMessage: "Couldn't save note",
+      },
+    );
   }, [noteId, dirty, dTitle, dHtml, dType, dNotebook, note, updateNote]);
 
   useEffect(() => {
@@ -187,7 +196,7 @@ export function NoteEditorPage() {
   return (
     <div className="flex min-h-screen flex-col bg-bg">
       {/* ── Top bar ─────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-20 flex flex-wrap items-center gap-2 border-b border-line bg-surface-1/90 px-4 py-2 backdrop-blur-sm">
+      <header className="sticky top-0 z-20 flex flex-wrap items-center gap-2 border-b-2 border-tx bg-surface-1 px-4 py-2">
         <Link to={`/learn/${topicId}`} className="ds-btn ghost sm shrink-0">
           <ArrowLeft className="size-3.5" /> Topic
         </Link>

@@ -1,24 +1,18 @@
 import { useEffect, useState } from "react";
-import { Check, X } from "lucide-react";
+import { Check, Moon, Sun, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { useUpdateSettingsMutation } from "@/features/settings/settingsApi";
 import {
   ACCENTS,
   applyAccent,
+  applyTheme,
   DEFAULT_ACCENT_ID,
   getSavedAccentId,
+  getSavedTheme,
+  type ThemeId,
 } from "./theme";
-
-/** Resolve stored value (either accent id like "blue" OR hex like "#4f8cff") to an accent id. */
-function resolveAccentId(): string {
-  const saved = getSavedAccentId(); // reads localStorage
-  // If it's a known id, use it directly
-  if (ACCENTS.find((a) => a.id === saved)) return saved;
-  // If it's a hex, find by acc value
-  const byHex = ACCENTS.find((a) => a.acc.toLowerCase() === saved.toLowerCase());
-  return byHex?.id ?? DEFAULT_ACCENT_ID;
-}
+import { applyUIMode, useUIMode, type UIMode } from "./uiMode";
 
 export function TweaksPanel({
   open,
@@ -27,12 +21,15 @@ export function TweaksPanel({
   open: boolean;
   onClose: () => void;
 }) {
-  const [accentId, setAccentId] = useState(resolveAccentId);
+  const [accentId, setAccentId] = useState(getSavedAccentId);
+  const [theme, setTheme] = useState<ThemeId>(getSavedTheme);
+  const uiMode = useUIMode();
   const [updateSettings] = useUpdateSettingsMutation();
 
   // Keep local state in sync with localStorage (e.g. after server sets it)
   useEffect(() => {
-    setAccentId(resolveAccentId());
+    setAccentId(getSavedAccentId());
+    setTheme(getSavedTheme());
   }, [open]);
 
   const choose = (id: string) => {
@@ -46,6 +43,11 @@ export function TweaksPanel({
     }
   };
 
+  const chooseTheme = (t: ThemeId) => {
+    setTheme(t);
+    applyTheme(t); // local-only for now — backend settings has no theme field yet
+  };
+
   if (!open) return null;
 
   return (
@@ -55,52 +57,110 @@ export function TweaksPanel({
         type="button"
         aria-label="Close tweaks"
         onClick={onClose}
-        className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px]"
+        className="fixed inset-0 z-40 bg-black/40"
       />
 
       {/* Slide-over */}
-      <aside className="fixed top-0 right-0 z-50 flex h-screen w-80 flex-col border-l border-line bg-surface-1 shadow-2xl">
-        <div className="flex h-14 items-center justify-between border-b border-line px-5">
-          <span className="font-semibold tracking-tight">Tweaks</span>
+      <aside
+        className="fixed top-0 right-0 z-50 flex h-screen w-80 flex-col border-l-2 border-tx bg-surface-1"
+        style={{ boxShadow: "var(--shadow-pop)" }}
+      >
+        <div className="flex h-14 items-center justify-between border-b-2 border-tx px-5">
+          <span className="font-display text-[15px] font-bold">Tweaks</span>
           <button
             type="button"
             onClick={onClose}
-            className="grid size-7 place-items-center rounded-md text-tx-3 hover:bg-surface-3 hover:text-tx"
+            className="grid size-7 place-items-center text-tx-3 hover:bg-surface-3 hover:text-tx"
           >
             <X className="size-4" />
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-5">
-          <div className="font-mono text-[10.5px] uppercase tracking-[0.13em] text-tx-3">
-            Accent color
-          </div>
+          <div className="eyebrow">Layout</div>
           <p className="mt-1 text-xs text-tx-3">
-            Re-tints the whole interface live. Synced across devices.
+            Brutalist is the current look. Classic brings back the earlier
+            rounded, dark dashboard. Saved on this device.
+          </p>
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            {(
+              [
+                { id: "brutalist" as UIMode, label: "Brutalist" },
+                { id: "classic" as UIMode, label: "Classic" },
+              ]
+            ).map((m) => {
+              const active = uiMode === m.id;
+              return (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => applyUIMode(m.id)}
+                  className={cn(
+                    "flex items-center justify-center gap-2 border-2 p-3 text-[12.5px] font-bold uppercase tracking-wide transition-colors",
+                    active
+                      ? "border-tx bg-acc text-acc-ink"
+                      : "border-tx text-tx-2 hover:bg-surface-2",
+                  )}
+                >
+                  {m.label}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="eyebrow mt-7">Theme</div>
+          <p className="mt-1 text-xs text-tx-3">
+            Paper for daylight, night ink for the evening. Saved on this device.
+          </p>
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            {(
+              [
+                { id: "paper" as ThemeId, label: "Paper", icon: Sun },
+                { id: "night" as ThemeId, label: "Night ink", icon: Moon },
+              ]
+            ).map((t) => {
+              const active = theme === t.id;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => chooseTheme(t.id)}
+                  className={cn(
+                    "flex items-center justify-center gap-2 border-2 p-3 text-[12.5px] font-bold uppercase tracking-wide transition-colors",
+                    active
+                      ? "border-tx bg-acc text-acc-ink"
+                      : "border-tx text-tx-2 hover:bg-surface-2",
+                  )}
+                >
+                  <t.icon className="size-4" />
+                  {t.label}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="eyebrow mt-7">Accent ink</div>
+          <p className="mt-1 text-xs text-tx-3">
+            The annotation color — checks, marks, progress. Synced across devices.
           </p>
 
           <div className="mt-4 grid grid-cols-3 gap-3">
             {ACCENTS.map((a) => {
               const active = a.id === accentId;
+              const swatch = theme === "night" ? a.night : a;
               return (
                 <button
                   key={a.id}
                   type="button"
                   onClick={() => choose(a.id)}
                   className={cn(
-                    "flex flex-col items-center gap-2 rounded-lg border p-3 transition-colors",
-                    active
-                      ? "border-line-3 bg-surface-2"
-                      : "border-line-2 hover:bg-surface-2",
+                    "flex flex-col items-center gap-2 border-2 p-3 transition-colors",
+                    active ? "border-tx bg-surface-3" : "border-tx hover:bg-surface-2",
                   )}
                 >
                   <span
-                    className="relative grid size-9 place-items-center rounded-full transition-shadow"
-                    style={{
-                      backgroundColor: a.acc,
-                      color: a.ink,
-                      boxShadow: active ? `0 0 12px ${a.acc}88` : "none",
-                    }}
+                    className="relative grid size-9 place-items-center border-2 border-tx"
+                    style={{ backgroundColor: swatch.acc, color: swatch.ink }}
                   >
                     {active && <Check className="size-4" strokeWidth={3} />}
                   </span>
@@ -121,8 +181,8 @@ export function TweaksPanel({
           )}
         </div>
 
-        <div className="border-t border-line px-5 py-3 text-[11px] text-tx-4">
-          Synced to your account &amp; this browser.
+        <div className="border-t-2 border-tx px-5 py-3 text-[11px] text-tx-4">
+          Accent syncs to your account; theme stays on this browser.
         </div>
       </aside>
     </>

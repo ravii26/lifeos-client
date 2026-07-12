@@ -3,21 +3,11 @@ import { ExternalLink, Heart, Pencil, Sparkles, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { confirm } from "@/components/ui/confirm";
+import { formatDate, safeDate } from "@/lib/date";
 
 import { useDeleteVaultMutation, useMarkVaultUsedMutation } from "../vaultApi";
 import { MEDIA_TYPE_BY_VALUE, VAULT_TYPE_BY_VALUE } from "../constants";
 import type { VaultItem } from "../types";
-
-function formatDate(iso?: string): string | null {
-  if (!iso) return null;
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return null;
-  return d.toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-}
 
 export function VaultDetailDialog({
   item,
@@ -34,7 +24,8 @@ export function VaultDetailDialog({
   const meta = VAULT_TYPE_BY_VALUE[item.vaultType];
   const media = item.mediaType ? MEDIA_TYPE_BY_VALUE[item.mediaType] : null;
   const MediaIcon = media?.icon;
-  const added = formatDate(item.createdAt);
+  const createdAt = safeDate(item.createdAt);
+  const added = createdAt ? formatDate(createdAt) : null;
   const isQuote = item.mediaType === "QUOTE";
 
   // Close on Escape, and lock background scroll while open.
@@ -54,7 +45,7 @@ export function VaultDetailDialog({
   const handlePull = async () => {
     try {
       await markUsed(item.id).unwrap();
-      toast(`"${item.title}" pulled from vault`, { icon: "✨" });
+      toast(`"${item.title}" pulled from vault`);
     } catch {
       toast.error("Couldn't pull that item. Try again.");
     }
@@ -86,7 +77,7 @@ export function VaultDetailDialog({
         type="button"
         aria-label="Close"
         onClick={onClose}
-        className="absolute inset-0 bg-black/55 backdrop-blur-[2px]"
+        className="absolute inset-0 bg-black/55"
       />
 
       <div

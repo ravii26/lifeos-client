@@ -141,7 +141,7 @@ export function TopicsPage() {
                 type="button"
                 className={cn("tag-toggle", areaFilter === a.id && "on")}
                 onClick={() => setAreaFilter(a.id)}
-                style={areaFilter === a.id ? { background: a.color, borderColor: "transparent", color: "#0a0b0d" } : undefined}
+                style={areaFilter === a.id ? { background: a.color, borderColor: "transparent", color: "#fdfaf3" } : undefined}
               >
                 {a.name}
               </button>

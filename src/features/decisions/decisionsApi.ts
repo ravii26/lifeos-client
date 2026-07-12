@@ -45,6 +45,23 @@ export interface PrimaryAction {
   estimatedMinutes: number | null;
 }
 
+// Today's time-blocked schedule the engine reasons over.
+export interface ScheduleInfo {
+  current: {
+    title: string;
+    blockType: string;
+    areaName: string | null;
+    endsAt: string; // local "HH:MM"
+  } | null;
+  next: {
+    title: string;
+    blockType: string;
+    areaName: string | null;
+    startsAt: string; // local "HH:MM"
+  } | null;
+  todayCount: number;
+}
+
 export interface DecisionResult {
   // Coach layer — present on both "ai" and "heuristic" sources.
   headline: string;
@@ -63,6 +80,7 @@ export interface DecisionResult {
   behaviorInsight: string;
   weeklyPattern?: string;
   streakAlerts?: StreakAlert[];
+  schedule?: ScheduleInfo;
   generatedAt: string;
   source: "ai" | "heuristic";
 }

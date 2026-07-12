@@ -36,8 +36,8 @@ export function TopicCard({ topic, area }: { topic: Topic; area?: Area }) {
         <div className="flex items-center justify-between gap-2">
           {area ? (
             <span
-              className="chip border-transparent text-[10px]"
-              style={{ color: areaColor, background: `color-mix(in srgb, ${areaColor} 15%, transparent)` }}
+              className="chip text-[10px]"
+              style={{ color: areaColor, borderColor: areaColor }}
             >
               <span className="size-1.5 rounded-full" style={{ backgroundColor: areaColor }} />
               {area.name}

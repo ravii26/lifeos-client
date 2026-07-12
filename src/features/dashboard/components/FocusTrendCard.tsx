@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 
 import { cn } from "@/lib/utils";
-import { localDayKey } from "@/lib/date";
+import { localDayKey, formatWeekdayShort } from "@/lib/date";
 import { useDailyFocusQuery } from "@/features/focus/focusApi";
 
 // The /focus/daily endpoint keys buckets by the user's local day and omits
@@ -33,7 +33,7 @@ export function FocusTrendCard() {
     const byDate = new Map((data ?? []).map((d) => [d.date, d.minutes]));
     return lastSevenLocalDays().map((d) => ({
       key: localKey(d),
-      label: d.toLocaleDateString(undefined, { weekday: "short" }),
+      label: formatWeekdayShort(d),
       minutes: byDate.get(localKey(d)) ?? 0,
     }));
   }, [data]);
@@ -74,7 +74,7 @@ export function FocusTrendCard() {
         </span>
       </div>
 
-      <div className="my-1.5 font-mono text-[30px] font-semibold leading-none">
+      <div className="my-1.5 font-display text-[30px] font-[580] tabular-nums leading-none">
         {fmtHm(total)}
         <span className="text-sm text-tx-3"> this week</span>
       </div>

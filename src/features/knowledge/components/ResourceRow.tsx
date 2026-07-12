@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ChevronDown, ExternalLink, Trash2, Star } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { runMutation } from "@/lib/run-mutation";
 import { confirm } from "@/components/ui/confirm";
 import {
   Select,
@@ -45,16 +46,19 @@ export function ResourceRow({ resource }: { resource: Resource }) {
 
   const handleProgressSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    await updateProgress({
-      id: resource.id,
-      data: {
-        ...(lessons !== "" ? { lessonsCompleted: Number(lessons) } : {}),
-        ...(total !== "" ? { totalLessons: Number(total) } : {}),
-        ...(mins !== "" ? { minutesConsumed: Number(mins) } : {}),
-        autoComplete: true,
+    await runMutation(
+      updateProgress,
+      {
+        id: resource.id,
+        data: {
+          ...(lessons !== "" ? { lessonsCompleted: Number(lessons) } : {}),
+          ...(total !== "" ? { totalLessons: Number(total) } : {}),
+          ...(mins !== "" ? { minutesConsumed: Number(mins) } : {}),
+          autoComplete: true,
+        },
       },
-    });
-    setShowProgress(false);
+      { onSuccess: () => setShowProgress(false), errorMessage: "Couldn't save progress" },
+    );
   };
 
   const handleDelete = async () => {
@@ -63,7 +67,7 @@ export function ResourceRow({ resource }: { resource: Resource }) {
       confirmText: "Delete",
       danger: true,
     }))) return;
-    deleteResource(resource.id);
+    await runMutation(deleteResource, resource.id, { errorMessage: "Couldn't delete resource" });
   };
 
   return (
@@ -124,7 +128,11 @@ export function ResourceRow({ resource }: { resource: Resource }) {
         <Select
           value={resource.status ?? "NOT_STARTED"}
           onValueChange={(v) =>
-            updateResource({ id: resource.id, data: { status: v as ResourceStatus } })
+            runMutation(
+              updateResource,
+              { id: resource.id, data: { status: v as ResourceStatus } },
+              { errorMessage: "Couldn't update resource status" },
+            )
           }
         >
           <SelectTrigger

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 import {
   Archive,
+  BookOpen,
   Calendar,
   ChevronLeft,
   ClipboardCheck,
@@ -20,9 +21,14 @@ import { cn } from "@/lib/utils";
 import { useListTasksQuery } from "@/features/tasks/tasksApi";
 import { useVibeConfig } from "@/features/settings/useVibe";
 import { useEnabledModules } from "@/features/settings/useEnabledModules";
+import { useUIMode } from "@/features/tweaks/uiMode";
 
 // `module` ties a nav item to a toggleable module; items without one (Dashboard,
 // Tasks, Areas, Dump, Settings) are core and always shown.
+// `icon` is only rendered in "classic" UI mode — in "brutalist" mode the
+// index number IS the mark. A picture-icon-per-row nav is the single most
+// recognizable "generated dashboard" tell; a numbered index list reads like
+// a table of contents instead.
 type NavItem = { label: string; to: string; icon: LucideIcon; end?: boolean; module?: string };
 type NavGroup = { title: string; items: NavItem[] };
 
@@ -42,6 +48,7 @@ const NAV: NavGroup[] = [
     items: [
       { label: "Goals", to: "/goals", icon: Flag, module: "goals" },
       { label: "Learn", to: "/learn", icon: GraduationCap, module: "learn" },
+      { label: "Library", to: "/library", icon: BookOpen, module: "library" },
       { label: "Areas", to: "/areas", icon: Target },
     ],
   },
@@ -79,6 +86,8 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const { data: tasks } = useListTasksQuery();
   const cfg = useVibeConfig();
   const { isEnabled } = useEnabledModules();
+  const uiMode = useUIMode();
+  const isClassic = uiMode === "classic";
 
   // Hide nav items whose module is disabled, then drop any group left empty.
   const groups = NAV.map((g) => ({
@@ -91,21 +100,46 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   // calm hides nav counts to keep the sidebar quiet.
   const badges: Record<string, number> = cfg.showNavCounts ? { "/tasks": openTasks } : {};
 
+  // Running index across all visible groups (01, 02, 03…) — brutalist-mode
+  // only; the number stands in for an icon, so it must stay sequential with
+  // no gaps after filtering.
+  let runningIndex = 0;
+
   return (
     <aside
       className={cn(
-        "flex flex-col border-r border-line bg-surface-1/60",
+        "flex flex-col bg-surface-1",
+        isClassic ? "border-r border-line bg-surface-1/60" : "border-r-2 border-tx",
         collapsed ? "w-16" : "w-[232px]",
       )}
     >
       {/* Brand */}
-      <div className="flex h-14 items-center gap-2.5 border-b border-line px-4">
-        <div className="grid size-7 shrink-0 place-items-center rounded-lg bg-primary text-sm font-extrabold text-primary-foreground shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_4px_14px_var(--acc-glow)]">
-          L
-        </div>
-        {!collapsed && (
-          <span className="text-base font-semibold tracking-tight">
-            Life<span className="text-primary">OS</span>
+      <div
+        className={cn(
+          "flex h-14 items-center gap-2.5 px-4",
+          isClassic ? "border-b border-line" : "border-b-2 border-tx",
+        )}
+      >
+        {isClassic ? (
+          <>
+            <div className="grid size-7 shrink-0 place-items-center rounded-lg bg-primary text-sm font-extrabold text-primary-foreground shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_4px_14px_var(--acc-glow)]">
+              L
+            </div>
+            {!collapsed && (
+              <span className="text-base font-semibold tracking-tight">
+                Life<span className="text-primary">OS</span>
+              </span>
+            )}
+          </>
+        ) : (
+          <span className="font-display text-[19px] font-[850] tracking-tight text-tx">
+            {collapsed ? (
+              <span className="text-acc">L.</span>
+            ) : (
+              <>
+                LifeOS<span className="text-acc">.</span>
+              </>
+            )}
           </span>
         )}
       </div>
@@ -115,50 +149,87 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
         {groups.map((group) => (
           <div key={group.title} className="mb-4">
             {!collapsed && (
-              <div className="px-2.5 pb-1.5 font-mono text-[10.5px] uppercase tracking-[0.13em] text-tx-3">
+              <div className="eyebrow px-2.5 pb-1.5">
                 {group.title}
               </div>
             )}
-            {group.items.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.end}
-                title={item.label}
-                className={({ isActive }) =>
-                  cn(
-                    "relative mt-0.5 flex items-center gap-3 rounded-md px-2.5 py-2 text-sm font-medium transition-colors",
-                    isActive
-                      ? "bg-surface-3 text-tx"
-                      : "text-tx-2 hover:bg-surface-2 hover:text-tx",
-                    collapsed && "justify-center px-0",
-                  )
-                }
-              >
-                {({ isActive }) => (
-                  <>
-                    {isActive && (
-                      <span className="absolute top-1/2 -left-3 h-[18px] w-[3px] -translate-y-1/2 rounded-r bg-primary shadow-[0_0_10px_var(--acc-glow)]" />
-                    )}
-                    <item.icon
-                      className={cn("size-[18px] shrink-0", isActive && "text-primary")}
-                    />
-                    {!collapsed && <span>{item.label}</span>}
-                    {!collapsed && badges[item.to] > 0 && (
-                      <span className={cn("nav-badge", isActive && "active")}>
-                        {badges[item.to]}
-                      </span>
-                    )}
-                  </>
-                )}
-              </NavLink>
-            ))}
+            {group.items.map((item) => {
+              runningIndex += 1;
+              const index = String(runningIndex).padStart(2, "0");
+              return (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  end={item.end}
+                  title={item.label}
+                  className={({ isActive }) =>
+                    cn(
+                      "flex items-center gap-3 text-sm transition-colors",
+                      isClassic
+                        ? cn(
+                            "relative mt-0.5 rounded-md px-2.5 py-2 font-medium",
+                            isActive
+                              ? "bg-surface-3 text-tx"
+                              : "text-tx-2 hover:bg-surface-2 hover:text-tx",
+                          )
+                        : cn(
+                            "px-2.5 py-[7px]",
+                            isActive
+                              ? "bg-tx text-bg font-bold"
+                              : "text-tx-2 hover:bg-surface-3 hover:text-tx font-semibold",
+                          ),
+                      collapsed && "justify-center px-0",
+                    )
+                  }
+                >
+                  {({ isActive }) => (
+                    <>
+                      {isClassic ? (
+                        <>
+                          {isActive && (
+                            <span className="absolute top-1/2 -left-3 h-[18px] w-[3px] -translate-y-1/2 rounded-r bg-primary shadow-[0_0_10px_var(--acc-glow)]" />
+                          )}
+                          <item.icon
+                            className={cn("size-[18px] shrink-0", isActive && "text-primary")}
+                          />
+                        </>
+                      ) : (
+                        <span
+                          className={cn(
+                            "w-4 shrink-0 font-mono text-[10.5px] tabular-nums",
+                            isActive ? "text-acc" : "text-tx-4",
+                          )}
+                        >
+                          {index}
+                        </span>
+                      )}
+                      {!collapsed && <span>{item.label}</span>}
+                      {!collapsed && badges[item.to] > 0 && (
+                        <span
+                          className={cn(
+                            "nav-badge",
+                            isActive && (isClassic ? "active" : "border-bg text-bg bg-transparent"),
+                          )}
+                        >
+                          {badges[item.to]}
+                        </span>
+                      )}
+                    </>
+                  )}
+                </NavLink>
+              );
+            })}
           </div>
         ))}
       </nav>
 
       {/* Footer */}
-      <div className="flex items-center gap-2 border-t border-line px-3 py-2.5">
+      <div
+        className={cn(
+          "flex items-center gap-2 px-3 py-2.5",
+          isClassic ? "border-t border-line" : "border-t-2 border-tx",
+        )}
+      >
         {!collapsed && <Clock />}
         <button
           type="button"

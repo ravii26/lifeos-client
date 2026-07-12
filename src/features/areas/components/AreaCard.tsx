@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { AlertTriangle, Pencil, Trash2 } from "lucide-react";
 
 import { Donut } from "@/components/charts/Donut";
+import { runMutation } from "@/lib/run-mutation";
 import { confirm } from "@/components/ui/confirm";
 import { areaIcon } from "../constants";
 import { useDeleteAreaMutation } from "../areasApi";
@@ -22,8 +23,8 @@ export interface AreaStats {
 function Metric({ label, val }: { label: string; val: string }) {
   return (
     <div className="flex items-center justify-between">
-      <span className="font-mono text-[11px] text-tx-3">{label}</span>
-      <span className="font-mono text-[11px] font-semibold text-tx-2">
+      <span className="text-[11.5px] text-tx-3">{label}</span>
+      <span className="text-[11.5px] font-semibold tabular-nums text-tx-2">
         {val}
       </span>
     </div>
@@ -60,14 +61,14 @@ export function AreaCard({
       confirmText: "Delete",
       danger: true,
     });
-    if (ok) deleteArea(area.id);
+    if (ok) await runMutation(deleteArea, area.id, { errorMessage: "Couldn't delete area" });
   };
 
   return (
     <Link
       to={`/areas/${area.id}`}
-      className="card card-pad group relative overflow-hidden block transition-colors hover:border-line-2"
-      style={showWarning ? { borderColor: "rgba(255,107,129,0.35)", background: "rgba(255,107,129,0.03)" } : undefined}
+      className="card card-pad group relative overflow-hidden block transition-colors hover:bg-surface-2"
+      style={showWarning ? { borderColor: "var(--danger)" } : undefined}
     >
       <div
         className="absolute inset-x-0 top-0 h-0.5 opacity-80"
@@ -113,12 +114,12 @@ export function AreaCard({
 
       <div className="flex items-center gap-4">
         {showWarning && (
-          <div className="mb-2 flex items-center gap-1.5 rounded-md bg-[rgba(255,107,129,0.1)] px-2 py-1 text-[11px] text-[#ff6b81]">
+          <div className="mb-2 flex items-center gap-1.5 rounded-md bg-danger/10 px-2 py-1 text-[11px] text-danger">
             <AlertTriangle className="size-3" /> Needs attention
           </div>
         )}
-        <Donut value={stats.score} size={88} stroke={8} color={showWarning ? "#ff6b81" : area.color}>
-          <span className="font-mono text-[23px] font-semibold">
+        <Donut value={stats.score} size={88} stroke={8} color={showWarning ? "var(--danger)" : area.color}>
+          <span className="font-display text-[23px] font-[580] tabular-nums">
             {stats.score}
           </span>
         </Donut>
@@ -130,7 +131,7 @@ export function AreaCard({
       </div>
 
       {area.type === "MAINTENANCE" || !area.isActive ? (
-        <div className="mt-3 font-mono text-[10px] tracking-[0.13em] text-tx-4 uppercase">
+        <div className="mt-3 eyebrow text-[10px] text-tx-4">
           {area.type}
           {!area.isActive && " · inactive"}
         </div>

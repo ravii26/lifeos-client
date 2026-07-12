@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Check, Plus } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { runMutation } from "@/lib/run-mutation";
 import { localDayKey } from "@/lib/date";
 import type { Area } from "@/features/areas/types";
 import {
@@ -39,16 +40,20 @@ export function QuickHabitRow({ habit, area }: { habit: Habit; area?: Area }) {
 
   const log = () => {
     if (done || isLoading) return;
-    logHabit({
-      id: habit.id,
-      completed: true,
-      ...(habit.habitType === "COUNT" && habit.targetCount != null
-        ? { count: habit.targetCount }
-        : {}),
-      ...(habit.habitType === "TIMER" && habit.targetMinutes != null
-        ? { minutes: habit.targetMinutes }
-        : {}),
-    });
+    runMutation(
+      logHabit,
+      {
+        id: habit.id,
+        completed: true,
+        ...(habit.habitType === "COUNT" && habit.targetCount != null
+          ? { count: habit.targetCount }
+          : {}),
+        ...(habit.habitType === "TIMER" && habit.targetMinutes != null
+          ? { minutes: habit.targetMinutes }
+          : {}),
+      },
+      { errorMessage: `Couldn't log ${habit.title}` },
+    );
   };
 
   return (
@@ -60,7 +65,7 @@ export function QuickHabitRow({ habit, area }: { habit: Habit; area?: Area }) {
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between">
           <span className="truncate text-[13px] font-medium">{habit.title}</span>
-          <span className="font-mono text-[11px] text-tx-3">
+          <span className="text-[11.5px] text-tx-3">
             {val}/{target}
           </span>
         </div>

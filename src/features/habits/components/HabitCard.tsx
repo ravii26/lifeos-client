@@ -131,7 +131,7 @@ export function HabitCard({
             const newStreak = streak + 1;
             toast.success(
               newStreak > 1
-                ? `${habit.title} logged · ${newStreak} day streak 🔥`
+                ? `${habit.title} logged · ${newStreak} day streak`
                 : `${habit.title} logged`,
             );
           } else if (measured) {
@@ -172,7 +172,7 @@ export function HabitCard({
       confirmText: "Delete",
       danger: true,
     }))) return;
-    deleteHabit(habit.id);
+    await runMutation(deleteHabit, habit.id, { errorMessage: "Couldn't delete habit" });
   };
 
   return (
@@ -185,7 +185,7 @@ export function HabitCard({
           />
           <div className="min-w-0">
             <div className="truncate text-sm font-semibold">{habit.title}</div>
-            <div className="mt-0.5 font-mono text-[11px] text-tx-3">{sub}</div>
+            <div className="mt-0.5 text-[11.5px] text-tx-3">{sub}</div>
           </div>
         </div>
         {cfg.showStreaks && (
@@ -195,7 +195,7 @@ export function HabitCard({
               color: streak > 0 ? "var(--acc)" : "var(--tx-3)",
               borderColor: streak > 0 ? "var(--acc-line)" : "var(--line)",
               ...(cfg.emphasize && streak > 0
-                ? { boxShadow: "0 0 10px var(--acc-glow)", fontWeight: 700 }
+                ? { background: "var(--acc-soft)", fontWeight: 700 }
                 : {}),
             }}
           >
@@ -218,7 +218,7 @@ export function HabitCard({
               }}
             />
           </div>
-          <span className="font-mono text-[11px] text-tx-3">
+          <span className="text-[11.5px] tabular-nums text-tx-3">
             {val}/{target}
           </span>
         </div>

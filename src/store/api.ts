@@ -38,6 +38,9 @@ export const api = createApi({
     "Settings",
     "Decision",
     "Graph",
+    "Link",
+    "Document",
+    "Suggestion",
   ],
   endpoints: () => ({}),
 });

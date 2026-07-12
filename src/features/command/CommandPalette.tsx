@@ -145,15 +145,16 @@ export function CommandPalette({
         type="button"
         aria-label="Close"
         onClick={onClose}
-        className="absolute inset-0 bg-black/60 backdrop-blur-[3px]"
+        className="absolute inset-0 bg-black/60"
       />
 
       {/* Panel */}
       <div
-        className="relative w-full max-w-[520px] overflow-hidden rounded-2xl shadow-[0_32px_80px_rgba(0,0,0,0.55)]"
+        className="relative w-full max-w-[520px] overflow-hidden"
         style={{
           background: "var(--surface-1)",
-          border: "1px solid var(--line-2)",
+          border: "2px solid var(--tx)",
+          boxShadow: "var(--shadow-pop)",
         }}
       >
         {/* Search bar */}

@@ -3,6 +3,7 @@ import { ChevronDown, Pause, Pencil, Play, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
+import { runMutation } from "@/lib/run-mutation";
 import { confirm } from "@/components/ui/confirm";
 import {
   Select,
@@ -68,7 +69,7 @@ export function GoalCard({
       danger: true,
     });
     if (!ok) return;
-    deleteGoal(goal.id);
+    await runMutation(deleteGoal, goal.id, { errorMessage: "Couldn't delete goal" });
   };
 
   const handleDeleteProject = async (project: { id: string; title: string }) => {
@@ -78,7 +79,7 @@ export function GoalCard({
       danger: true,
     });
     if (!ok) return;
-    deleteProject(project.id);
+    await runMutation(deleteProject, project.id, { errorMessage: "Couldn't delete project" });
   };
 
   const handlePark = async () => {
@@ -96,7 +97,11 @@ export function GoalCard({
     if (v === goal.status) return;
     if (v === "ACTIVE") onActivate?.(goal);
     else if (v === "PARKED") handlePark();
-    else updateGoal({ id: goal.id, data: { status: v } });
+    else {
+      runMutation(updateGoal, { id: goal.id, data: { status: v } }, {
+        errorMessage: "Couldn't update goal status",
+      });
+    }
   };
 
   return (
@@ -190,7 +195,7 @@ export function GoalCard({
             <button
               type="button"
               onClick={() => onActivate(goal)}
-              className="flex items-center gap-1 rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-white transition-opacity hover:opacity-90"
+              className="flex items-center gap-1 rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90"
             >
               <Play className="size-3" /> Activate
             </button>

@@ -3,6 +3,8 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { runMutation } from "@/lib/run-mutation";
+import { formatDate } from "@/lib/date";
 import { confirm } from "@/components/ui/confirm";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,13 +27,7 @@ import { INSIGHT_STATUSES, INSIGHT_STATUS_BY_VALUE, REVIEW_TYPE_LABEL } from "..
 import { AddInsightForm } from "../components/AddInsightForm";
 import type { InsightStatus } from "../types";
 
-function fmt(iso: string) {
-  return new Date(iso).toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
+const fmt = (iso: string) => formatDate(new Date(iso));
 
 export function ReviewDetailPage() {
   const { reviewId = "" } = useParams();
@@ -57,8 +53,10 @@ export function ReviewDetailPage() {
       confirmText: "Delete",
       danger: true,
     }))) return;
-    deleteReview(review.id);
-    navigate("/review");
+    await runMutation(deleteReview, review.id, {
+      onSuccess: () => navigate("/review"),
+      errorMessage: "Couldn't delete review",
+    });
   };
 
   const startEdit = () => {
@@ -72,16 +70,19 @@ export function ReviewDetailPage() {
 
   const handleSaveReview = async () => {
     if (!review) return;
-    await updateReview({
-      id: review.id,
-      data: {
-        summary: summary.trim() ? summary.trim() : null,
-        highlights: highlights.trim() ? highlights.trim() : null,
-        improvements: improvements.trim() ? improvements.trim() : null,
-        userNote: userNote.trim() ? userNote.trim() : null,
+    await runMutation(
+      updateReview,
+      {
+        id: review.id,
+        data: {
+          summary: summary.trim() ? summary.trim() : null,
+          highlights: highlights.trim() ? highlights.trim() : null,
+          improvements: improvements.trim() ? improvements.trim() : null,
+          userNote: userNote.trim() ? userNote.trim() : null,
+        },
       },
-    }).unwrap();
-    setEditing(false);
+      { onSuccess: () => setEditing(false), errorMessage: "Couldn't save review" },
+    );
   };
 
   if (isLoading) {
@@ -213,11 +214,15 @@ export function ReviewDetailPage() {
                 <Select
                   value={insight.status ?? "PENDING"}
                   onValueChange={(v) =>
-                    updateInsight({
-                      insightId: insight.id,
-                      reviewId,
-                      data: { status: v as InsightStatus },
-                    })
+                    runMutation(
+                      updateInsight,
+                      {
+                        insightId: insight.id,
+                        reviewId,
+                        data: { status: v as InsightStatus },
+                      },
+                      { errorMessage: "Couldn't update insight status" },
+                    )
                   }
                 >
                   <SelectTrigger className={cn(
@@ -240,7 +245,9 @@ export function ReviewDetailPage() {
                       confirmText: "Remove",
                       danger: true,
                     }))) return;
-                    deleteInsight({ insightId: insight.id, reviewId });
+                    await runMutation(deleteInsight, { insightId: insight.id, reviewId }, {
+                      errorMessage: "Couldn't remove insight",
+                    });
                   }}
                   title="Remove insight"
                   className="grid size-7 shrink-0 place-items-center rounded-md text-tx-4 transition-colors hover:bg-surface-3 hover:text-danger"

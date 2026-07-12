@@ -44,7 +44,7 @@ import type { Capture, CaptureType, ConvertCaptureRequest } from "../types";
 const TYPE_META: Record<CaptureType, { label: string; color: string }> = {
   TASK: { label: "Task", color: "#5b8af5" },
   HABIT: { label: "Habit", color: "#7fc97f" },
-  NOTE: { label: "Note", color: "#f5c842" },
+  NOTE: { label: "Note", color: "var(--warn)" },
   RESOURCE: { label: "Resource", color: "#e07ab1" },
   VAULT: { label: "Vault", color: "#a78bfa" },
 };
@@ -69,7 +69,7 @@ function CaptureInput() {
   // Re-poll a few times so the background classification result lands without a
   // manual refresh.
   const pollAfterCapture = () => {
-    toast("Captured — AI is sorting…", { icon: "⚡" });
+    toast("Captured — AI is sorting…");
     timers.current.forEach(clearTimeout);
     timers.current = [1000, 2500, 4000, 6000].map((ms) =>
       setTimeout(() => {
@@ -336,7 +336,7 @@ function CaptureCard({ capture }: { capture: Capture }) {
       confirmText: "Dismiss",
       danger: true,
     }))) return;
-    deleteCapture(capture.id);
+    await runMutation(deleteCapture, capture.id, { errorMessage: "Couldn't dismiss capture" });
   };
 
   return (
@@ -376,8 +376,8 @@ function CaptureCard({ capture }: { capture: Capture }) {
           <div className="flex flex-wrap items-center gap-2">
             {worthNow && (
               <span
-                className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold"
-                style={{ color: "#2dd4a7", background: "rgba(45,212,167,0.12)" }}
+                className="flex items-center gap-1 border-2 px-2 py-0.5 text-[10px] font-bold uppercase"
+                style={{ color: "var(--ok)", borderColor: "var(--ok)" }}
                 title={capture.worthReason ?? "Worth acting on now"}
               >
                 <Zap className="size-3" /> Worth now
@@ -389,7 +389,11 @@ function CaptureCard({ capture }: { capture: Capture }) {
                 <button
                   key={t}
                   type="button"
-                  onClick={() => updateType({ id: capture.id, type: t })}
+                  onClick={() =>
+                    runMutation(updateType, { id: capture.id, type: t }, {
+                      errorMessage: "Couldn't update capture type",
+                    })
+                  }
                   className={cn(
                     "chip text-[10px] transition",
                     capture.type === t
@@ -426,7 +430,7 @@ function CaptureCard({ capture }: { capture: Capture }) {
 
         <div className="flex shrink-0 items-center gap-1.5 pt-0.5">
           {capture.status === "CONVERTED" ? (
-            <span className="flex items-center gap-1 rounded-full bg-[rgba(45,212,167,0.12)] px-2.5 py-1 text-[11px] font-semibold text-[#2dd4a7]">
+            <span className="flex items-center gap-1 rounded-full bg-ok/10 px-2.5 py-1 text-[11px] font-semibold text-ok">
               <Check className="size-3" /> Auto-converted to {TYPE_META[capture.type].label}
             </span>
           ) : (

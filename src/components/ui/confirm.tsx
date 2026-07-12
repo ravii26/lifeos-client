@@ -74,7 +74,7 @@ export function ConfirmHost() {
         type="button"
         aria-label="Cancel"
         onClick={() => close(false)}
-        className="absolute inset-0 bg-black/55 backdrop-blur-[2px]"
+        className="absolute inset-0 bg-black/55"
       />
 
       <div

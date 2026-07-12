@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Trash2, Tag, ArrowUpRight } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { runMutation } from "@/lib/run-mutation";
 import { confirm } from "@/components/ui/confirm";
 import { useDeleteNoteMutation } from "../knowledgeApi";
 import { NOTE_TYPE_BY_VALUE } from "../constants";
@@ -27,7 +28,7 @@ export function NoteCard({
       title: `Delete note "${note.title}"?`,
       confirmText: "Delete",
       danger: true,
-    })) deleteNote(note.id);
+    })) await runMutation(deleteNote, note.id, { errorMessage: "Couldn't delete note" });
   };
 
   return (

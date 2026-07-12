@@ -17,6 +17,8 @@ import {
 import { toast } from "sonner";
 
 import { Donut } from "@/components/charts/Donut";
+import { runMutation } from "@/lib/run-mutation";
+import { formatShortDate } from "@/lib/date";
 import { Sparkline } from "@/components/charts/Sparkline";
 import { useCompleteTaskMutation, useListTasksQuery } from "@/features/tasks/tasksApi";
 import { useListHabitsQuery } from "@/features/habits/habitsApi";
@@ -32,9 +34,9 @@ import { areaIcon } from "../constants";
 // ─── helpers ───────────────────────────────────────────────────────────────
 
 const PRIORITY_COLOR: Record<string, string> = {
-  CRITICAL: "#ff6b81",
-  HIGH: "#ff9d4d",
-  MEDIUM: "#4f8cff",
+  CRITICAL: "var(--danger)",
+  HIGH: "var(--creative)",
+  MEDIUM: "var(--career)",
   LOW: "var(--tx-4)",
 };
 
@@ -123,10 +125,7 @@ function TaskItem({
       </div>
       {task.dueDate && (
         <span className="shrink-0 font-mono text-[10px] text-tx-4">
-          {new Date(task.dueDate).toLocaleDateString(undefined, {
-            month: "short",
-            day: "numeric",
-          })}
+          {formatShortDate(new Date(task.dueDate))}
         </span>
       )}
     </div>
@@ -250,8 +249,10 @@ export function AreaDetailPage() {
       : tasks;
 
   const handleComplete = async (id: string, title: string) => {
-    await completeTask(id);
-    toast.success(`"${title}" done`);
+    await runMutation(completeTask, id, {
+      onSuccess: () => toast.success(`"${title}" done`),
+      errorMessage: "Couldn't complete task",
+    });
   };
 
   // Area not found guard
@@ -282,18 +283,10 @@ export function AreaDetailPage() {
       </button>
 
       {/* Header */}
-      <div className="card raised card-pad mb-[var(--gap)] overflow-hidden relative">
-        {/* ambient glow */}
-        <div
-          className="pointer-events-none absolute inset-0"
-          style={{
-            background: `radial-gradient(120% 80% at 0% 0%, ${color}28, transparent 60%)`,
-          }}
-        />
-        <div
-          className="absolute inset-x-0 top-0 h-0.5"
-          style={{ background: color }}
-        />
+      <div
+        className="card raised card-pad mb-[var(--gap)] overflow-hidden relative"
+        style={{ borderTop: `5px solid ${color}` }}
+      >
 
         <div className="relative flex items-start gap-5">
           {/* Icon badge */}

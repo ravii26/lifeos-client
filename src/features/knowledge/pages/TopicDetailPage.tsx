@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Pencil, Plus, Trash2, BookOpen, FileText, BookMarked } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { runMutation } from "@/lib/run-mutation";
 import { confirm } from "@/components/ui/confirm";
 import { CardSkeleton } from "@/components/ui/CardSkeleton";
 import { useListAreasQuery } from "@/features/areas/areasApi";
@@ -69,7 +70,7 @@ export function TopicDetailPage() {
       confirmText: "Delete",
       danger: true,
     }))) return;
-    deleteNotebook(notebook.id);
+    await runMutation(deleteNotebook, notebook.id, { errorMessage: "Couldn't delete notebook" });
   };
 
   const handleDeleteTopic = async () => {
@@ -80,8 +81,10 @@ export function TopicDetailPage() {
       confirmText: "Delete",
       danger: true,
     }))) return;
-    deleteTopic(topic.id);
-    navigate("/learn");
+    await runMutation(deleteTopic, topic.id, {
+      onSuccess: () => navigate("/learn"),
+      errorMessage: "Couldn't delete topic",
+    });
   };
 
   if (isLoading) return <p className="page text-sm text-tx-3">Loading topic…</p>;
@@ -130,7 +133,11 @@ export function TopicDetailPage() {
                 <Select
                   value={topic.masteryLevel ?? "BEGINNER"}
                   onValueChange={(v) =>
-                    updateTopic({ id: topic.id, data: { masteryLevel: v as MasteryLevel } })
+                    runMutation(
+                      updateTopic,
+                      { id: topic.id, data: { masteryLevel: v as MasteryLevel } },
+                      { errorMessage: "Couldn't update mastery level" },
+                    )
                   }
                 >
                   <SelectTrigger

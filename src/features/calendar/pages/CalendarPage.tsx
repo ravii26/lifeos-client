@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Pause, Play, Plus, Repeat } from "lucide-react";
 
 import { Stat } from "@/components/ui/Stat";
-import { localDayKey as dayKey } from "@/lib/date";
+import { localDayKey as dayKey, formatLongDate } from "@/lib/date";
 import { useListAreasQuery } from "@/features/areas/areasApi";
 import { useActiveFocus } from "@/features/focus/useActiveFocus";
 import { useListFocusQuery } from "@/features/focus/focusApi";
@@ -132,11 +132,7 @@ export function CalendarPage() {
           <div className="eyebrow">Execution · time</div>
           <h1 className="page-title">Calendar</h1>
           <div className="page-sub">
-            {day.toLocaleDateString(undefined, {
-              weekday: "long",
-              month: "short",
-              day: "numeric",
-            })}{" "}
+            {formatLongDate(day)}{" "}
             · planned vs. actual focus
           </div>
         </div>

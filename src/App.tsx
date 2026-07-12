@@ -20,6 +20,7 @@ import { ReviewDetailPage } from "@/features/reviews/pages/ReviewDetailPage";
 import { CalendarPage } from "@/features/calendar/pages/CalendarPage";
 import { IdentityPage } from "@/features/identity/pages/IdentityPage";
 import { SettingsPage } from "@/features/settings/pages/SettingsPage";
+import { LibraryPage } from "@/features/library/pages/LibraryPage";
 import { RequireModule } from "@/features/settings/RequireModule";
 import { ImmersiveMode } from "@/features/focus/pages/ImmersiveMode";
 import { TasksPage } from "@/features/tasks/pages/TasksPage";
@@ -67,6 +68,9 @@ function App() {
               </Route>
               <Route element={<RequireModule module="vault" />}>
                 <Route path="/vault" element={<VaultPage />} />
+              </Route>
+              <Route element={<RequireModule module="library" />}>
+                <Route path="/library" element={<LibraryPage />} />
               </Route>
               <Route element={<RequireModule module="identity" />}>
                 <Route path="/identity" element={<IdentityPage />} />

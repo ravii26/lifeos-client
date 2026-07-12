@@ -3,6 +3,7 @@ import { Check, Pause, Pencil, Play, Repeat, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
+import { runMutation } from "@/lib/run-mutation";
 import { confirm } from "@/components/ui/confirm";
 import type { Area } from "@/features/areas/types";
 import {
@@ -55,10 +56,14 @@ export function TaskRow({
 
   const toggle = async () => {
     if (done) {
-      await updateTask({ id: task.id, data: { status: "TODO" } });
+      await runMutation(updateTask, { id: task.id, data: { status: "TODO" } }, {
+        errorMessage: "Couldn't update task",
+      });
     } else {
-      await completeTask(task.id);
-      toast.success(`"${task.title}" done`);
+      await runMutation(completeTask, task.id, {
+        onSuccess: () => toast.success(`"${task.title}" done`),
+        errorMessage: "Couldn't complete task",
+      });
     }
   };
 
@@ -68,7 +73,9 @@ export function TaskRow({
       confirmText: "Delete",
       danger: true,
     }))) return;
-    deleteTask(task.id);
+    await runMutation(deleteTask, task.id, {
+      errorMessage: "Couldn't delete task",
+    });
   };
 
   return (
@@ -110,13 +117,13 @@ export function TaskRow({
             </span>
           )}
           {task.taskType === "COUNT" && task.targetCount != null && (
-            <span className="font-mono text-[11px] text-tx-3">
+            <span className="text-[11.5px] text-tx-3">
               {task.completedCount ?? 0}/{task.targetCount}
             </span>
           )}
           {task.taskType === "TIMER" && task.targetMinutes != null && (
             <span
-              className="font-mono text-[11px] text-tx-3"
+              className="text-[11.5px] text-tx-3"
               title="Focused minutes / target"
             >
               {loggedMinutes}/{task.targetMinutes}m

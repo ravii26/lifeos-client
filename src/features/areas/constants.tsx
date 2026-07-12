@@ -11,15 +11,43 @@ import {
   Wallet,
 } from "lucide-react";
 
-/** Preset colors offered in the create form (the design's life-area hues). */
+/** Preset colors offered in the create form (flat poster colors). */
 export const AREA_COLORS = [
-  "#4f8cff", // blue
-  "#2dd4a7", // green
-  "#a884ff", // violet
-  "#c5f23f", // lime
-  "#ff6b81", // pink
-  "#ff9d4d", // orange
+  "#1a56ff", // signal blue
+  "#00a651", // toxic green
+  "#7b2ff7", // ultraviolet
+  "#d6a200", // hazard mustard
+  "#ff2f6e", // hot magenta
+  "#ffb400", // amber
 ];
+
+/**
+ * Areas created in either earlier pass (original neon, then "Ink & Paper"
+ * muted prints) have those older hexes stored in the DB. Normalize both
+ * generations straight to the current poster palette at read time so old
+ * accounts don't render a color that no longer exists. Unknown/custom
+ * colors pass through untouched.
+ */
+const LEGACY_AREA_COLOR_MAP: Record<string, string> = {
+  // original neon era
+  "#4f8cff": "#1a56ff",
+  "#2dd4a7": "#00a651",
+  "#a884ff": "#7b2ff7",
+  "#c5f23f": "#d6a200",
+  "#ff6b81": "#ff2f6e",
+  "#ff9d4d": "#ffb400",
+  // "Ink & Paper" era
+  "#3f56b5": "#1a56ff",
+  "#337a5b": "#00a651",
+  "#7a4fae": "#7b2ff7",
+  "#96721c": "#d6a200",
+  "#b54458": "#ff2f6e",
+  "#b55f24": "#ffb400",
+};
+
+export function normalizeAreaColor(color: string): string {
+  return LEGACY_AREA_COLOR_MAP[color?.toLowerCase?.() ?? ""] ?? color;
+}
 
 /** Preset icons. The backend stores the chosen `name` string. */
 export const AREA_ICONS: { name: string; Icon: LucideIcon }[] = [

@@ -19,6 +19,8 @@ import {
   useListProjectsQuery,
 } from "@/features/goals/goalsApi";
 
+import { TaskLinks } from "@/features/links/components/TaskLinks";
+
 import { useCreateTaskMutation, useUpdateTaskMutation } from "../tasksApi";
 import { PRIORITIES, RECURRENCES, TASK_TYPES } from "../constants";
 import type { Priority, Recurrence, Task, TaskType } from "../types";
@@ -333,6 +335,10 @@ export function NewTaskForm({
           </div>
         )}
       </div>
+
+      {/* Cross-cluster links (goal/topic/resource/note). Only on an existing
+          task — a link needs a persisted task id to point at. */}
+      {isEdit && <TaskLinks taskId={task.id} />}
 
       {formError && <p className="mt-4 text-sm text-danger">{formError}</p>}
 

@@ -7,6 +7,8 @@ import { selectCurrentUser } from "@/features/auth/authSlice";
 import { useAppSelector } from "@/store/hooks";
 import { useGetSettingsQuery } from "@/features/settings/settingsApi";
 import { useVibe, useVibeConfig } from "@/features/settings/useVibe";
+import { runMutation } from "@/lib/run-mutation";
+import { formatLongDate } from "@/lib/date";
 import { Donut } from "@/components/charts/Donut";
 import { Sparkline } from "@/components/charts/Sparkline";
 import { useListAreasQuery } from "@/features/areas/areasApi";
@@ -115,23 +117,19 @@ export function DashboardPage() {
     .map((a) => areaStats.get(a.id)?.score ?? 0)
     .sort((a, b) => a - b);
 
-  const today = new Date();
-  const dayLabel = today.toLocaleDateString(undefined, {
-    weekday: "long",
-    month: "short",
-    day: "numeric",
-  });
+  const dayLabel = formatLongDate(new Date());
 
   return (
     <div className="mx-auto max-w-[1320px] px-8 pt-7 pb-20">
-      {/* Greeting */}
+      {/* Page header — the date carries the weight, like the header of a
+          planner's daily page, not a chat-assistant "Good morning" banner. */}
       <div className="mb-6 flex items-end justify-between gap-4">
         <div>
-          <div className="eyebrow mb-1.5">{dayLabel}</div>
-          <h1 className="h-display text-[27px] leading-tight">
+          <div className="eyebrow mb-1.5">
             {greeting()}
-            {firstName ? `, ${firstName}` : ""}.
-          </h1>
+            {firstName ? `, ${firstName}` : ""}
+          </div>
+          <h1 className="h-display text-[29px] leading-tight">{dayLabel}</h1>
           <p className="mt-1 text-sm text-tx-3">
             {openTasks.length > 0 ? (
               <>
@@ -163,16 +161,16 @@ export function DashboardPage() {
 
       {/* Vibe banner */}
       {vibe === "calm" && (
-        <div className="mb-5 rounded-[var(--r-md)] border border-line bg-surface-1 px-4 py-3 text-[13px] text-tx-3">
-          <span className="font-semibold text-tx">Calm mode.</span> Take it one step at a time. No pressure — just progress.
+        <div className="mb-5 border-2 border-tx bg-surface-1 px-4 py-3 text-[13px] text-tx-3">
+          <span className="font-bold text-tx">Calm mode.</span> Take it one step at a time. No pressure — just progress.
         </div>
       )}
       {vibe === "energetic" && (
         <div
-          className="mb-5 rounded-[var(--r-md)] px-4 py-3 text-[13px] font-semibold text-tx"
-          style={{ background: "var(--acc-soft)", border: "1px solid var(--acc-line)" }}
+          className="mb-5 px-4 py-3 text-[13px] font-bold text-tx"
+          style={{ background: "var(--acc-soft)", border: "2px solid var(--acc)" }}
         >
-          ⚡ Energetic mode.{" "}
+          Energetic mode.{" "}
           {openTasks.length > 0
             ? `${openTasks.length} task${openTasks.length !== 1 ? "s" : ""} to crush today. Let's go.`
             : "All clear — capture something new and keep the momentum."}
@@ -181,13 +179,10 @@ export function DashboardPage() {
 
       {/* Hero row: Next action + Focus timer */}
       <div className="grid gap-[var(--gap)] lg:grid-cols-[1.45fr_1fr] lg:items-stretch">
-        <div className="card raised relative flex flex-col overflow-hidden">
-          <div
-            className="pointer-events-none absolute inset-0"
-            style={{
-              background: `radial-gradient(120% 90% at 0% 0%, ${weakest?.area.color ?? "var(--acc)"}1f, transparent 55%)`,
-            }}
-          />
+        <div
+          className="card raised relative flex flex-col overflow-hidden"
+          style={{ borderLeft: `5px solid ${weakest?.area.color ?? "var(--acc)"}` }}
+        >
           <div className="card-pad relative flex h-full flex-col">
             <div className="flex items-center justify-between">
               <div
@@ -198,7 +193,6 @@ export function DashboardPage() {
                   className="size-1.5 rounded-full"
                   style={{
                     background: weakest?.area.color ?? "var(--acc)",
-                    boxShadow: `0 0 8px ${weakest?.area.color ?? "var(--acc)"}`,
                   }}
                 />
                 Next action{weakest ? " · weakest area" : ""}
@@ -235,10 +229,12 @@ export function DashboardPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={async () => {
-                    await completeTask(nextAction.id);
-                    toast.success(`"${nextAction.title}" done`);
-                  }}
+                  onClick={() =>
+                    runMutation(completeTask, nextAction.id, {
+                      onSuccess: () => toast.success(`"${nextAction.title}" done`),
+                      errorMessage: "Couldn't complete task",
+                    })
+                  }
                   className="ds-btn ghost"
                 >
                   <Check className="size-3.5" /> Mark done
@@ -276,20 +272,20 @@ export function DashboardPage() {
                   <Link
                     key={a.id}
                     to={`/areas/${a.id}`}
-                    className="relative flex flex-col items-center gap-2 rounded-[var(--r-md)] border border-line bg-surface-2 px-3 py-3.5 transition-colors hover:border-line-2"
-                    style={cfg.showAlerts && st.score < 40 ? { borderColor: "rgba(255,107,129,0.35)", background: "rgba(255,107,129,0.04)" } : undefined}
+                    className="relative flex flex-col items-center gap-2 border-2 border-tx bg-surface-2 px-3 py-3.5 transition-colors hover:bg-surface-3"
+                    style={cfg.showAlerts && st.score < 40 ? { borderColor: "var(--danger)" } : undefined}
                   >
                     {cfg.showAlerts && st.score < 40 && (
-                      <AlertTriangle className="absolute top-2 right-2 size-3 text-[#ff6b81]" />
+                      <AlertTriangle className="absolute top-2 right-2 size-3 text-danger" />
                     )}
-                    <Donut value={st.score} size={74} stroke={7} color={cfg.showAlerts && st.score < 40 ? "#ff6b81" : a.color}>
-                      <span className="font-mono text-[19px] font-semibold">
+                    <Donut value={st.score} size={74} stroke={7} color={cfg.showAlerts && st.score < 40 ? "var(--danger)" : a.color}>
+                      <span className="font-display text-[19px] font-[800] tabular-nums">
                         {st.score}
                       </span>
                     </Donut>
                     <div className="text-center">
                       <div
-                        className="text-[12.5px] font-semibold"
+                        className="text-[12.5px] font-bold"
                         style={{ color: a.color }}
                       >
                         {a.name}
@@ -311,19 +307,19 @@ export function DashboardPage() {
           {weakest && cfg.showAlerts && (
             <div
               className="card card-pad"
-              style={{
-                borderColor: "rgba(255,107,129,0.28)",
-                background:
-                  "linear-gradient(180deg, rgba(255,107,129,0.07), var(--surface-1))",
-              }}
+              style={{ borderLeft: "5px solid var(--danger)" }}
             >
               <div
-                className="eyebrow mb-2"
-                style={{ color: "var(--relationships)" }}
+                className="eyebrow mb-2 flex items-center gap-1.5"
+                style={{ color: "var(--danger)" }}
               >
-                ⚠ Needs attention
+                <span
+                  className="size-1.5 rounded-full"
+                  style={{ background: "var(--danger)" }}
+                />
+                Needs attention
               </div>
-              <div className="mb-1 text-[15px] font-[650]">
+              <div className="mb-1 text-[15px] font-[700]">
                 {weakest.area.name} is your weakest area
               </div>
               <p className="m-0 mb-3 text-[13px] text-tx-3">
@@ -343,14 +339,11 @@ export function DashboardPage() {
           <div className="card card-pad flex-1">
             <div className="mb-1.5 flex items-center justify-between">
               <div className="eyebrow">Average score</div>
-              <span
-                className="chip border-transparent"
-                style={{ color: "var(--ok)", background: "rgba(45,212,167,.1)" }}
-              >
+              <span className="chip" style={{ color: "var(--ok)" }}>
                 {areas?.length ?? 0} areas
               </span>
             </div>
-            <div className="my-1.5 font-mono text-[30px] font-semibold leading-none">
+            <div className="my-1.5 font-display text-[30px] font-[900] tabular-nums leading-none">
               {avgScore}
               <span className="text-sm text-tx-3"> avg</span>
             </div>

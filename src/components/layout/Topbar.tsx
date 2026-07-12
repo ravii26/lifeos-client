@@ -12,6 +12,7 @@ import {
 import { logout, selectCurrentUser } from "@/features/auth/authSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { FocusTimer } from "@/features/focus/components/FocusTimer";
+import { runMutation } from "@/lib/run-mutation";
 import { useGetSettingsQuery, useUpdateSettingsMutation } from "@/features/settings/settingsApi";
 import type { Vibe } from "@/features/settings/types";
 
@@ -47,12 +48,12 @@ export function Topbar({
 
   const vibe: Vibe = settings?.vibe ?? "focused";
   const handleVibeChange = (v: string) => {
-    updateSettings({ vibe: v as Vibe });
+    runMutation(updateSettings, { vibe: v as Vibe }, { errorMessage: "Couldn't update vibe" });
   };
 
   return (
-    <header className="flex h-14 shrink-0 items-center gap-3 border-b border-line bg-surface-1/70 px-5 backdrop-blur">
-      <span className="font-[640] tracking-[-0.01em]">{title}</span>
+    <header className="flex h-14 shrink-0 items-center gap-3 border-b-2 border-tx bg-surface-1 px-5">
+      <span className="font-display text-[15px] font-bold">{title}</span>
       <div className="flex-1" />
 
       {/* Persistent focus timer — lives in the shell so it survives navigation. */}
@@ -60,7 +61,7 @@ export function Topbar({
 
       {/* Vibe selector — reads/writes to backend settings. */}
       <Select value={vibe} onValueChange={handleVibeChange}>
-        <SelectTrigger className="h-8 w-[110px] rounded-[var(--r-sm)] border-line bg-surface-2 text-xs font-medium text-tx-2 hover:border-line-2">
+        <SelectTrigger className="h-8 w-[110px] border-2 border-tx bg-surface-2 text-xs font-bold uppercase tracking-wide text-tx-2 hover:bg-surface-3">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -74,11 +75,11 @@ export function Topbar({
       <button
         type="button"
         onClick={onOpenSearch}
-        className="flex items-center gap-2 rounded-md border border-line bg-surface-2 px-2.5 py-1.5 text-xs text-tx-3 transition-colors hover:border-line-2 hover:bg-surface-3"
+        className="flex items-center gap-2 border-2 border-tx bg-surface-2 px-2.5 py-1.5 text-xs font-semibold text-tx-3 transition-colors hover:bg-surface-3"
       >
         <Search className="size-3.5" />
         <span>Search…</span>
-        <kbd className="ml-2 rounded border border-line-2 bg-surface-4 px-1.5 font-mono text-[10px] text-tx-2">
+        <kbd className="ml-2 border border-tx bg-surface-4 px-1.5 font-mono text-[10px] font-bold text-tx-2">
           ⌘K
         </kbd>
       </button>
@@ -96,8 +97,7 @@ export function Topbar({
       <Link
         to="/identity"
         title="Your profile & identity"
-        className="grid size-8 shrink-0 place-items-center rounded-full text-xs font-bold text-[var(--acc-ink)] transition-opacity hover:opacity-85"
-        style={{ background: "linear-gradient(135deg, var(--acc), var(--health))" }}
+        className="grid size-8 shrink-0 place-items-center border-2 border-tx bg-primary font-display text-[13px] font-bold text-primary-foreground transition-opacity hover:opacity-85"
       >
         {initial}
       </Link>

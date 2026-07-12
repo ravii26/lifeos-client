@@ -4,6 +4,7 @@ import { Check, Pause, Play, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { useListAreasQuery } from "@/features/areas/areasApi";
+import { runMutation } from "@/lib/run-mutation";
 import {
   useCompleteTaskMutation,
   useListTasksQuery,
@@ -57,8 +58,10 @@ export function ImmersiveMode() {
 
   const handleComplete = async () => {
     if (activeTask) {
-      await completeTask(activeTask.id);
-      toast.success(`✓ "${activeTask.title}" completed`);
+      await runMutation(completeTask, activeTask.id, {
+        onSuccess: () => toast.success(`"${activeTask.title}" completed`),
+        errorMessage: "Couldn't complete task",
+      });
     }
     focus.stop();
   };
@@ -92,33 +95,16 @@ export function ImmersiveMode() {
 
   return (
     <div
-      className="fixed inset-0 z-[70] flex flex-col overflow-hidden"
+      className="fixed inset-0 z-[70] flex flex-col overflow-hidden bg-bg"
       style={{ animation: "fade .25s" }}
     >
-      {/* Ambient background — shifts to area color when a task is running */}
-      <div
-        className="pointer-events-none absolute inset-0 transition-all duration-1000"
-        style={{
-          background: focus.active
-            ? `radial-gradient(120% 90% at 50% -10%, ${glowColor}18 0%, #0e1115 55%, var(--bg) 100%)`
-            : "radial-gradient(120% 90% at 50% -10%, #1a1e24 0%, var(--bg) 60%)",
-        }}
-      />
-
       {/* Top bar */}
-      <div className="relative flex items-center justify-between px-7 py-[18px]">
+      <div className="relative flex items-center justify-between border-b-2 border-tx px-7 py-[18px]">
         <div className="flex items-center gap-2.5">
-          <div
-            className="grid size-[22px] place-items-center rounded-md text-[13px] font-extrabold"
-            style={{
-              background: glowColor,
-              color: "#0a0b0d",
-              boxShadow: `0 0 14px ${glowColor}55`,
-            }}
-          >
-            L
-          </div>
-          <span className="h-display text-[15px] text-tx">Immersive</span>
+          <span className="font-display text-[17px] font-[850] tracking-tight text-tx">
+            LifeOS<span style={{ color: glowColor }}>.</span>
+          </span>
+          <span className="font-display text-[15px] font-semibold text-tx-3">Immersive</span>
         </div>
         <button
           type="button"
@@ -139,42 +125,27 @@ export function ImmersiveMode() {
           {focus.active ? "In deep work" : "Choose your one thing"}
         </div>
 
-        {/* Timer + breathing rings */}
+        {/* Timer + status frame — a bordered bracket, not a soft halo */}
         <div className="relative flex items-center justify-center">
-          {/* Outer ring */}
           {focus.active && (
             <div
-              className="absolute rounded-full border"
+              className="absolute border-2"
               style={{
-                inset: "-36px",
-                borderColor: `${glowColor}22`,
-                animation: "breathe-outer 4s ease-in-out infinite",
-              }}
-            />
-          )}
-          {/* Inner ring */}
-          {focus.active && (
-            <div
-              className="absolute rounded-full border"
-              style={{
-                inset: "-18px",
-                borderColor: `${glowColor}44`,
-                animation: "breathe 4s ease-in-out infinite",
+                inset: "-28px",
+                borderColor: glowColor,
+                animation: "breathe 2.6s ease-in-out infinite",
               }}
             />
           )}
 
           {/* Timer digits */}
           <div
-            className="relative font-mono font-semibold tabular-nums transition-all duration-700"
+            className="relative font-display font-[560] tabular-nums transition-all duration-700"
             style={{
               fontSize: "clamp(64px, 13vw, 130px)",
               lineHeight: 1,
               letterSpacing: "-0.04em",
               color: focus.active ? glowColor : "var(--tx-4)",
-              textShadow: focus.active
-                ? `0 0 80px ${glowColor}44, 0 0 140px ${glowColor}22`
-                : "none",
             }}
           >
             {focus.active ? focus.label : "00:00"}
@@ -202,11 +173,7 @@ export function ImmersiveMode() {
               {activeArea && (
                 <span
                   className="chip text-[11px]"
-                  style={{
-                    color: activeArea.color,
-                    borderColor: `${activeArea.color}44`,
-                    background: `${activeArea.color}14`,
-                  }}
+                  style={{ color: activeArea.color }}
                 >
                   <span
                     className="mr-1.5 inline-block size-1.5 rounded-full"
@@ -218,11 +185,7 @@ export function ImmersiveMode() {
               {activeTask.priority && (
                 <span
                   className="chip text-[11px]"
-                  style={{
-                    color: PRIORITY_BY_VALUE[activeTask.priority].hex,
-                    borderColor: "transparent",
-                    background: `${PRIORITY_BY_VALUE[activeTask.priority].hex}1a`,
-                  }}
+                  style={{ color: PRIORITY_BY_VALUE[activeTask.priority].hex }}
                 >
                   {PRIORITY_BY_VALUE[activeTask.priority].label}
                 </span>
@@ -258,9 +221,9 @@ export function ImmersiveMode() {
                 style={{
                   minWidth: 140,
                   background: glowColor,
-                  color: "#0a0b0d",
-                  border: "none",
-                  boxShadow: `0 0 20px ${glowColor}44`,
+                  color: "#ffffff",
+                  border: "2px solid var(--tx)",
+                  boxShadow: "var(--shadow-1)",
                 }}
               >
                 <Check className="size-4" /> Complete
@@ -320,7 +283,7 @@ function TaskPicker({
             key={t.id}
             type="button"
             onClick={() => onPick(t.id)}
-            className="group flex items-center justify-between rounded-[var(--r-md)] border border-line-2 bg-surface-2/80 px-4 py-3 backdrop-blur-sm transition-all hover:border-acc-line hover:bg-surface-2"
+            className="group flex items-center justify-between rounded-[var(--r-md)] border-2 border-tx bg-surface-2 px-4 py-3 transition-all hover:border-acc-line hover:bg-surface-2"
             style={{
               ["--hover-glow" as string]: area?.color ?? "var(--acc)",
             }}
