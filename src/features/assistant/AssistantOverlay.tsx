@@ -28,9 +28,10 @@ export function AssistantOverlay() {
     const message = draft.trim();
     if (!message || isLoading) return;
     setDraft("");
+    const history = [...turns];
     setTurns((t) => [...t, { role: "user", text: message }]);
     try {
-      const result = await ask({ message }).unwrap();
+      const result = await ask({ message, history }).unwrap();
       setTurns((t) => [...t, { role: "assistant", text: result.answer }]);
     } catch {
       setTurns((t) => [

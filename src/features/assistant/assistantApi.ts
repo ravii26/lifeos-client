@@ -2,6 +2,7 @@ import { api } from "@/store/api";
 
 export interface AssistantAskRequest {
   message: string;
+  history?: { role: "user" | "assistant"; text: string }[];
 }
 
 export interface AssistantAskResult {
