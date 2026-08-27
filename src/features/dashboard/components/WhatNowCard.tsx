@@ -166,10 +166,10 @@ export function WhatNowCard() {
   const caughtUp = data.primaryAction === null;
 
   return (
-    <div className="card card-pad">
+    <div className="card raised card-pad" style={{ borderLeft: `5px solid ${accent}` }}>
       <div className="mb-3 flex items-center gap-2">
-        <Brain className="size-4 text-acc" />
-        <div className="font-display text-[15px] font-bold">What Now?</div>
+        <Brain className="size-5 text-acc" />
+        <div className="font-display text-[18px] font-bold">What Now?</div>
         {data.source === "ai" && <span className="ml-auto chip text-[10px]">AI</span>}
       </div>
 

@@ -1096,6 +1096,35 @@
   .rise {
     animation: rise 0.15s ease-out;
   }
+
+  /* Custom transition keyframes & animations */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideInLeft {
+    from {
+      transform: translate(-6px, -50%);
+      opacity: 0;
+    }
+    to {
+      transform: translate(0, -50%);
+      opacity: 1;
+    }
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.25s ease-out forwards;
+  }
+
+  .animate-slide-in-left {
+    animation: slideInLeft 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
 }
 
 /* ==================================================================
@@ -1403,4 +1432,86 @@
    which the --display var already points at inside the classic block. */
 [data-ui="classic"] .font-display {
   font-family: var(--display);
+}
+
+/* ==================================================================
+   Phase 2: UX Psychology Keyframe Animations
+   ================================================================== */
+
+/* 1. Dopamine Sparks Completion Burst */
+@keyframes spark-burst {
+  0% {
+    transform: translate(-50%, -50%) scale(0.3);
+    opacity: 1;
+    box-shadow: 
+      0 -14px 0 var(--acc),
+      10px -10px 0 var(--career),
+      14px 0 0 var(--health),
+      10px 10px 0 var(--mind),
+      0 14px 0 var(--finance),
+      -10px 10px 0 var(--relationships),
+      -14px 0 0 var(--creative),
+      -10px -10px 0 var(--acc);
+  }
+  60% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.6);
+    opacity: 0;
+    box-shadow: 
+      0 -24px 0 transparent,
+      17px -17px 0 transparent,
+      24px 0 0 transparent,
+      17px 17px 0 transparent,
+      0 24px 0 transparent,
+      -17px 17px 0 transparent,
+      -24px 0 0 transparent,
+      -17px -17px 0 transparent;
+  }
+}
+
+.dopamine-spark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 50;
+  animation: spark-burst 0.45s cubic-bezier(0.15, 0.85, 0.35, 1) forwards;
+}
+
+/* 2. Focus Active Pulsing animations */
+@keyframes focus-breath-classic {
+  0%, 100% {
+    box-shadow: 0 0 2px transparent;
+    border-color: var(--line-2);
+  }
+  50% {
+    box-shadow: 0 0 14px var(--acc);
+    border-color: var(--acc);
+  }
+}
+
+@keyframes focus-breath-brutalist {
+  0%, 100% {
+    border-color: var(--tx);
+    box-shadow: var(--shadow-1);
+  }
+  50% {
+    border-color: var(--acc);
+    box-shadow: 2px 2px 0 var(--acc);
+  }
+}
+
+/* Apply pulse based on active theme */
+.focus-active-pulse {
+  animation: focus-breath-brutalist 2s steps(2, start) infinite;
+}
+
+[data-ui="classic"] .focus-active-pulse {
+  animation: focus-breath-classic 2.5s ease-in-out infinite;
 }

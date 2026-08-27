@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Check, Pause, Pencil, Play, Repeat, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -35,6 +35,7 @@ export function TaskRow({
   const [startFocus] = useStartFocusMutation();
   const [stopFocus] = useStopFocusMutation();
   const { data: sessions } = useListFocusQuery();
+  const [showSpark, setShowSpark] = useState(false);
 
   const done = task.status === "COMPLETED";
   const priority = task.priority ? PRIORITY_BY_VALUE[task.priority] : undefined;
@@ -60,6 +61,8 @@ export function TaskRow({
         errorMessage: "Couldn't update task",
       });
     } else {
+      setShowSpark(true);
+      setTimeout(() => setShowSpark(false), 450);
       await runMutation(completeTask, task.id, {
         onSuccess: () => toast.success(`"${task.title}" done`),
         errorMessage: "Couldn't complete task",
@@ -84,9 +87,10 @@ export function TaskRow({
         type="button"
         onClick={toggle}
         title={done ? "Mark as not done" : "Mark done"}
-        className={cn("check", done && "on")}
+        className={cn("check relative", done && "on")}
       >
         {done && <Check className="size-3" strokeWidth={2.6} />}
+        {showSpark && <span className="dopamine-spark" />}
       </button>
 
       <div className="min-w-0 flex-1">

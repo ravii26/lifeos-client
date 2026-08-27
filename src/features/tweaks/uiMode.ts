@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from "react";
+import { getAccentById, getSavedAccentId, paint } from "./theme";
 
 /**
  * UI mode: "brutalist" is the current design (zero radius, hard borders,
@@ -22,6 +23,7 @@ export function getSavedUIMode(): UIMode {
 export function applyUIMode(mode: UIMode) {
   localStorage.setItem(STORAGE_KEY, mode);
   document.documentElement.dataset.ui = mode;
+  paint(getAccentById(getSavedAccentId()));
   listeners.forEach((l) => l());
 }
 

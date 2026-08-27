@@ -15,6 +15,8 @@ import { FocusTimer } from "@/features/focus/components/FocusTimer";
 import { runMutation } from "@/lib/run-mutation";
 import { useGetSettingsQuery, useUpdateSettingsMutation } from "@/features/settings/settingsApi";
 import type { Vibe } from "@/features/settings/types";
+import { useUIMode } from "@/features/tweaks/uiMode";
+import { cn } from "@/lib/utils";
 
 const TITLES: Record<string, string> = {
   "/": "Dashboard",
@@ -45,6 +47,9 @@ export function Topbar({
   const [updateSettings] = useUpdateSettingsMutation();
   const user = useAppSelector(selectCurrentUser);
   const initial = user?.name?.[0]?.toUpperCase() ?? "?";
+  
+  const uiMode = useUIMode();
+  const isClassic = uiMode === "classic";
 
   const vibe: Vibe = settings?.vibe ?? "focused";
   const handleVibeChange = (v: string) => {
@@ -52,7 +57,14 @@ export function Topbar({
   };
 
   return (
-    <header className="flex h-14 shrink-0 items-center gap-3 border-b-2 border-tx bg-surface-1 px-5">
+    <header 
+      className={cn(
+        "flex h-14 shrink-0 items-center gap-3 transition-all duration-300 px-5 z-20",
+        isClassic 
+          ? "border-b border-line bg-surface-1/40 backdrop-blur-md" 
+          : "border-b-2 border-tx bg-surface-1"
+      )}
+    >
       <span className="font-display text-[15px] font-bold">{title}</span>
       <div className="flex-1" />
 
@@ -61,7 +73,14 @@ export function Topbar({
 
       {/* Vibe selector — reads/writes to backend settings. */}
       <Select value={vibe} onValueChange={handleVibeChange}>
-        <SelectTrigger className="h-8 w-[110px] border-2 border-tx bg-surface-2 text-xs font-bold uppercase tracking-wide text-tx-2 hover:bg-surface-3">
+        <SelectTrigger 
+          className={cn(
+            "h-8 w-[110px] text-xs font-bold uppercase tracking-wide text-tx-2 transition-all duration-150 select-none",
+            isClassic
+              ? "border border-line bg-surface-2 rounded-md hover:bg-surface-3 hover:text-tx"
+              : "border-2 border-tx bg-surface-2 hover:bg-surface-3 hover:text-tx"
+          )}
+        >
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -75,11 +94,23 @@ export function Topbar({
       <button
         type="button"
         onClick={onOpenSearch}
-        className="flex items-center gap-2 border-2 border-tx bg-surface-2 px-2.5 py-1.5 text-xs font-semibold text-tx-3 transition-colors hover:bg-surface-3"
+        className={cn(
+          "flex items-center gap-2 px-3 py-1.5 text-xs font-semibold transition-all duration-150 ease-out hover:scale-[1.02] active:scale-[0.98] select-none",
+          isClassic
+            ? "border border-line bg-surface-2 rounded-md text-tx-3 hover:bg-surface-3 hover:text-tx"
+            : "border-2 border-tx bg-surface-2 text-tx-3 hover:bg-surface-3 hover:text-tx"
+        )}
       >
         <Search className="size-3.5" />
         <span>Search…</span>
-        <kbd className="ml-2 border border-tx bg-surface-4 px-1.5 font-mono text-[10px] font-bold text-tx-2">
+        <kbd 
+          className={cn(
+            "ml-2 px-1.5 font-mono text-[10px] font-bold transition-colors",
+            isClassic
+              ? "border border-line bg-surface-3 rounded text-tx-3"
+              : "border border-tx bg-surface-4 text-tx-2"
+          )}
+        >
           ⌘K
         </kbd>
       </button>
@@ -89,6 +120,10 @@ export function Topbar({
         size="icon"
         title="Tweaks"
         onClick={onOpenTweaks}
+        className={cn(
+          "transition-all duration-150 hover:scale-105 active:scale-95",
+          isClassic ? "rounded-md" : "rounded-none border-2 border-transparent hover:border-tx"
+        )}
       >
         <SlidersHorizontal className="size-4" />
       </Button>
@@ -97,7 +132,12 @@ export function Topbar({
       <Link
         to="/identity"
         title="Your profile & identity"
-        className="grid size-8 shrink-0 place-items-center border-2 border-tx bg-primary font-display text-[13px] font-bold text-primary-foreground transition-opacity hover:opacity-85"
+        className={cn(
+          "grid size-8 shrink-0 place-items-center font-display text-[13px] font-bold text-primary-foreground transition-all duration-200 ease-out hover:scale-105 select-none",
+          isClassic
+            ? "rounded-full bg-primary shadow-sm hover:shadow-[0_0_12px_var(--acc-glow)]"
+            : "border-2 border-tx bg-primary"
+        )}
       >
         {initial}
       </Link>
@@ -107,6 +147,10 @@ export function Topbar({
         size="icon"
         title="Log out"
         onClick={() => dispatch(logout())}
+        className={cn(
+          "transition-all duration-150 hover:scale-105 active:scale-95",
+          isClassic ? "rounded-md" : "rounded-none border-2 border-transparent hover:border-tx"
+        )}
       >
         <LogOut className="size-4" />
       </Button>

@@ -55,7 +55,7 @@ export function AskPanel({ documents }: { documents: LibraryDocument[] }) {
             if (e.key === "Enter" && (e.metaKey || e.ctrlKey))
               submit(e as unknown as React.FormEvent);
           }}
-          placeholder="Ask anything from your documents — e.g. “how much protein should I eat daily?”"
+          placeholder="Ask anything — your documents, or your areas, goals, habits, and tasks — e.g. “what's open in Fitness?”"
           rows={2}
           className="w-full resize-none rounded-[var(--r-sm)] border border-line-2 bg-inset px-3 py-2.5 text-sm text-tx outline-none placeholder:text-tx-4 focus-visible:border-acc-line"
         />

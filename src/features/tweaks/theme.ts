@@ -120,9 +120,10 @@ function rgbChannels(hex: string): string {
  * blending the accent toward white/near-black depending on theme so it
  * still reads as a flat fill.
  */
-function paint(accent: Accent) {
+export function paint(accent: Accent) {
   const root = document.documentElement;
-  const isNight = getSavedTheme() === "night";
+  const isClassic = root.dataset.ui === "classic";
+  const isNight = getSavedTheme() === "night" || isClassic;
   const variant = isNight ? accent.night : accent;
   const ch = rgbChannels(variant.acc);
   root.style.setProperty("--acc", variant.acc);

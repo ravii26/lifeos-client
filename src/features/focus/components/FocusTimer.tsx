@@ -16,6 +16,7 @@ export function FocusTimer() {
         className={cn(
           "flex items-center gap-2 rounded-full border border-acc-line bg-acc-soft px-3 py-1.5",
           "text-xs font-medium text-primary transition-colors hover:brightness-110 disabled:opacity-60",
+          "focus-active-pulse",
         )}
       >
         <span className="relative flex size-2">

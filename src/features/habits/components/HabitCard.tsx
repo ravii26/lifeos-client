@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Check, Flame, Minus, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -33,6 +33,7 @@ export function HabitCard({
   const { data: logs } = useListHabitLogsQuery(habit.id, { skip: hasInline });
   const [logHabit, { isLoading: logging }] = useLogHabitMutation();
   const [deleteHabit, { isLoading: deleting }] = useDeleteHabitMutation();
+  const [showSpark, setShowSpark] = useState(false);
 
   const loggedDays = useMemo(
     () =>
@@ -117,6 +118,12 @@ export function HabitCard({
     const amount = Math.max(0, next);
     const completed = measured ? amount >= target : true;
     const wasDone = todayDone;
+
+    if (completed && !wasDone) {
+      setShowSpark(true);
+      setTimeout(() => setShowSpark(false), 450);
+    }
+
     await runMutation(
       logHabit,
       {
@@ -238,7 +245,7 @@ export function HabitCard({
               onClick={() => setLog(val + step)}
               disabled={logging}
               title={`+${step}${unit}`}
-              className={cn("ds-btn sm", !todayDone && "acc")}
+              className={cn("ds-btn sm relative overflow-hidden", !todayDone && "acc")}
             >
               {todayDone ? (
                 <>
@@ -250,6 +257,7 @@ export function HabitCard({
                   {unit}
                 </>
               )}
+              {showSpark && <span className="dopamine-spark" />}
             </button>
           </div>
         ) : (
@@ -258,7 +266,7 @@ export function HabitCard({
             onClick={toggleBoolean}
             disabled={logging}
             title={todayDone ? "Tap to unmark" : "Mark done for today"}
-            className={cn("ds-btn sm", !todayDone && "acc")}
+            className={cn("ds-btn sm relative overflow-hidden", !todayDone && "acc")}
           >
             {todayDone ? (
               <>
@@ -269,6 +277,7 @@ export function HabitCard({
                 <Plus className="size-3" /> Log today
               </>
             )}
+            {showSpark && <span className="dopamine-spark" />}
           </button>
         )}
         {onEdit && (

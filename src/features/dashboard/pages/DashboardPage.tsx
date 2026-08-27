@@ -1,24 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { AlertTriangle, ArrowRight, Check, Play, Zap } from "lucide-react";
-import { toast } from "sonner";
+import { AlertTriangle, ArrowRight, Play } from "lucide-react";
 
 import { selectCurrentUser } from "@/features/auth/authSlice";
 import { useAppSelector } from "@/store/hooks";
 import { useGetSettingsQuery } from "@/features/settings/settingsApi";
 import { useVibe, useVibeConfig } from "@/features/settings/useVibe";
-import { runMutation } from "@/lib/run-mutation";
 import { formatLongDate } from "@/lib/date";
 import { Donut } from "@/components/charts/Donut";
 import { Sparkline } from "@/components/charts/Sparkline";
 import { useListAreasQuery } from "@/features/areas/areasApi";
-import {
-  useCompleteTaskMutation,
-  useListTasksQuery,
-} from "@/features/tasks/tasksApi";
+import { useListTasksQuery } from "@/features/tasks/tasksApi";
 import { TaskRow } from "@/features/tasks/components/TaskRow";
 import { useListHabitsQuery } from "@/features/habits/habitsApi";
 import { useActiveFocus } from "@/features/focus/useActiveFocus";
+
+import { OnboardingIntake } from "@/features/onboarding/components/OnboardingIntake";
 
 import { ActiveProjectsCard } from "../components/ActiveProjectsCard";
 import { FocusCard } from "../components/FocusCard";
@@ -57,10 +54,9 @@ export function DashboardPage() {
     if (route) navigate(route, { replace: true });
   }, [settings, navigate]);
 
-  const { data: areas } = useListAreasQuery();
+  const { data: areas, isLoading: areasLoading } = useListAreasQuery();
   const { data: tasks } = useListTasksQuery();
   const { data: habits } = useListHabitsQuery({ isActive: true });
-  const [completeTask] = useCompleteTaskMutation();
 
   const areaById = useMemo(
     () => new Map((areas ?? []).map((a) => [a.id, a])),
@@ -103,12 +99,6 @@ export function DashboardPage() {
     return scored.sort((a, b) => a.score - b.score)[0];
   }, [areas, areaStats]);
 
-  // Next action: first open task in the weakest area, else any open task.
-  const nextAction =
-    (weakest && openTasks.find((t) => t.areaId === weakest.area.id)) ??
-    openTasks[0] ??
-    null;
-
   const avgScore = useMemo(() => {
     const vals = (areas ?? []).map((a) => areaStats.get(a.id)?.score ?? 0);
     return vals.length ? Math.round(vals.reduce((x, y) => x + y, 0) / vals.length) : 0;
@@ -118,6 +108,26 @@ export function DashboardPage() {
     .sort((a, b) => a - b);
 
   const dayLabel = formatLongDate(new Date());
+
+  // A brand-new account has nothing for any of the cards below to show — the
+  // rest of this page would just be a wall of "No areas yet." / "No open
+  // tasks." empty states. Replace it with the onboarding intake until the
+  // first Area exists; it disappears on its own once areas.length > 0
+  // (createArea invalidates the Area list tag, so this refetches live).
+  if (!areasLoading && areas && areas.length === 0) {
+    return (
+      <div className="mx-auto max-w-[900px] px-8 pt-7 pb-20">
+        <div className="mb-6">
+          <div className="eyebrow mb-1.5">
+            {greeting()}
+            {firstName ? `, ${firstName}` : ""}
+          </div>
+          <h1 className="h-display text-[29px] leading-tight">Welcome to LifeOS</h1>
+        </div>
+        <OnboardingIntake />
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-[1320px] px-8 pt-7 pb-20">
@@ -177,83 +187,9 @@ export function DashboardPage() {
         </div>
       )}
 
-      {/* Hero row: Next action + Focus timer */}
-      <div className="grid gap-[var(--gap)] lg:grid-cols-[1.45fr_1fr] lg:items-stretch">
-        <div
-          className="card raised relative flex flex-col overflow-hidden"
-          style={{ borderLeft: `5px solid ${weakest?.area.color ?? "var(--acc)"}` }}
-        >
-          <div className="card-pad relative flex h-full flex-col">
-            <div className="flex items-center justify-between">
-              <div
-                className="eyebrow flex items-center gap-1.5"
-                style={{ color: weakest?.area.color }}
-              >
-                <span
-                  className="size-1.5 rounded-full"
-                  style={{
-                    background: weakest?.area.color ?? "var(--acc)",
-                  }}
-                />
-                Next action{weakest ? " · weakest area" : ""}
-              </div>
-              {weakest && (
-                <span className="chip">
-                  {weakest.area.name} {weakest.score}
-                </span>
-              )}
-            </div>
-
-            <h2 className="h-display my-1.5 mt-3.5 max-w-[460px] text-[25px] leading-[1.18]">
-              {nextAction
-                ? nextAction.title
-                : "You're all caught up. Capture something new."}
-            </h2>
-            <p className="m-0 max-w-[420px] text-[13px] text-tx-3">
-              {nextAction
-                ? weakest
-                  ? `Picked because ${weakest.area.name} is your lowest-scoring area. Knock it out and watch the ring climb.`
-                  : "Your top open task — start here."
-                : "Nothing pressing right now. Nice work."}
-            </p>
-
-            {nextAction && (
-              <div className="mt-auto flex gap-2 pt-[18px]">
-                <button
-                  type="button"
-                  onClick={() => focus.start()}
-                  disabled={!!focus.active}
-                  className="ds-btn acc"
-                >
-                  <Zap className="size-3.5" /> Start now
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    runMutation(completeTask, nextAction.id, {
-                      onSuccess: () => toast.success(`"${nextAction.title}" done`),
-                      errorMessage: "Couldn't complete task",
-                    })
-                  }
-                  className="ds-btn ghost"
-                >
-                  <Check className="size-3.5" /> Mark done
-                </button>
-                <Link to="/tasks" className="ds-btn ghost">
-                  Defer
-                </Link>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <FocusCard />
-      </div>
-
-      {/* What Now — decision engine */}
-      <div className="mt-[var(--gap)]">
-        <WhatNowCard />
-      </div>
+      {/* What Now — the dominant hero. One ranked, decay- and identity-aware
+          recommendation, not one card competing among six for attention. */}
+      <WhatNowCard />
 
       {/* Row 2: life areas + momentum */}
       <div className="mt-[var(--gap)] grid gap-[var(--gap)] lg:grid-cols-[1.45fr_1fr]">
@@ -304,6 +240,7 @@ export function DashboardPage() {
         </div>
 
         <div className="flex flex-col gap-[var(--gap)]">
+          <FocusCard />
           {weakest && cfg.showAlerts && (
             <div
               className="card card-pad"

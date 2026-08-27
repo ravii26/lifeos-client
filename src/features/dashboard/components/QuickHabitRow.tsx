@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Check, Plus } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -19,6 +19,7 @@ function todayKey(): string {
 export function QuickHabitRow({ habit, area }: { habit: Habit; area?: Area }) {
   const { data: logs } = useListHabitLogsQuery(habit.id);
   const [logHabit, { isLoading }] = useLogHabitMutation();
+  const [showSpark, setShowSpark] = useState(false);
 
   const done = useMemo(() => {
     const tk = todayKey();
@@ -40,6 +41,8 @@ export function QuickHabitRow({ habit, area }: { habit: Habit; area?: Area }) {
 
   const log = () => {
     if (done || isLoading) return;
+    setShowSpark(true);
+    setTimeout(() => setShowSpark(false), 450);
     runMutation(
       logHabit,
       {
@@ -77,10 +80,11 @@ export function QuickHabitRow({ habit, area }: { habit: Habit; area?: Area }) {
         type="button"
         onClick={log}
         disabled={isLoading}
-        className={cn("check size-[26px]", done && "on")}
+        className={cn("check relative size-[26px]", done && "on")}
         title={done ? "Logged today" : "Log today"}
       >
         {done ? <Check className="size-3.5" strokeWidth={2.6} /> : <Plus className="size-3.5" />}
+        {showSpark && <span className="dopamine-spark" />}
       </button>
     </div>
   );
