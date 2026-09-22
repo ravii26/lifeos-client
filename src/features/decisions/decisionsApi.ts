@@ -83,6 +83,10 @@ export interface DecisionResult {
   schedule?: ScheduleInfo;
   generatedAt: string;
   source: "ai" | "heuristic";
+  // One short question targeting the single biggest gap in Identity, capped
+  // to once/day server-side — null when there's nothing worth asking, or
+  // the cap says not yet.
+  profilingPrompt: { field: string; question: string } | null;
 }
 
 export const decisionsApi = api.injectEndpoints({
@@ -91,7 +95,11 @@ export const decisionsApi = api.injectEndpoints({
       query: () => ({ url: "/decisions/now", method: "GET" }),
       providesTags: [{ type: "Decision", id: "NOW" }],
     }),
+    answerProfilePrompt: builder.mutation<void, { field: string; value: string }>({
+      query: (body) => ({ url: "/decisions/profile-answer", method: "POST", body }),
+      invalidatesTags: [{ type: "Decision", id: "NOW" }],
+    }),
   }),
 });
 
-export const { useGetDecisionsNowQuery } = decisionsApi;
+export const { useGetDecisionsNowQuery, useAnswerProfilePromptMutation } = decisionsApi;

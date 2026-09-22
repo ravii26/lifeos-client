@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from "react";
-import { Brain, Send, X, Loader2 } from "lucide-react";
+import { Brain, Send, Loader2 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { useAssistantAskMutation } from "./assistantApi";
+import { RoamingAvatar } from "./RoamingAvatar";
 
 interface ChatTurn {
   role: "user" | "assistant";
@@ -17,8 +18,10 @@ export function AssistantOverlay() {
   const [open, setOpen] = useState(false);
   const [turns, setTurns] = useState<ChatTurn[]>([]);
   const [draft, setDraft] = useState("");
+  const [talking, setTalking] = useState(false);
   const [ask, { isLoading }] = useAssistantAskMutation();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const talkTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -33,24 +36,30 @@ export function AssistantOverlay() {
     try {
       const result = await ask({ message, history }).unwrap();
       setTurns((t) => [...t, { role: "assistant", text: result.answer }]);
+      pulseTalking();
     } catch {
       setTurns((t) => [
         ...t,
         { role: "assistant", text: "Couldn't reach the assistant just now — try again in a moment." },
       ]);
+      pulseTalking();
     }
+  };
+
+  const pulseTalking = () => {
+    if (talkTimerRef.current) clearTimeout(talkTimerRef.current);
+    setTalking(true);
+    talkTimerRef.current = setTimeout(() => setTalking(false), 1400);
   };
 
   return (
     <>
-      <button
-        type="button"
+      <RoamingAvatar
+        open={open}
+        talking={talking}
+        thinking={isLoading}
         onClick={() => setOpen((v) => !v)}
-        aria-label={open ? "Close assistant" : "Open assistant"}
-        className="fixed bottom-5 right-5 z-40 flex size-12 items-center justify-center border-2 border-tx bg-acc text-white shadow-lg transition-transform hover:scale-105"
-      >
-        {open ? <X className="size-5" /> : <Brain className="size-5" />}
-      </button>
+      />
 
       {open && (
         <div className="fixed bottom-20 right-5 z-40 flex h-[520px] w-[380px] max-w-[calc(100vw-2.5rem)] flex-col border-2 border-tx bg-surface-1 shadow-xl">

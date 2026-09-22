@@ -1,15 +1,62 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Brain, CalendarClock, Flame, TrendingDown, Play, PartyPopper } from "lucide-react";
+import { Brain, CalendarClock, Flame, TrendingDown, Play, PartyPopper, MessageCircleQuestion } from "lucide-react";
+import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
+import { runMutation } from "@/lib/run-mutation";
 import {
   useGetDecisionsNowQuery,
+  useAnswerProfilePromptMutation,
   type DecisionSuggestion,
   type PrimaryAction,
   type Tone,
   type Urgency,
 } from "@/features/decisions/decisionsApi";
 import { useVibeConfig } from "@/features/settings/useVibe";
+
+function ProfilingPrompt({ field, question }: { field: string; question: string }) {
+  const [value, setValue] = useState("");
+  const [dismissed, setDismissed] = useState(false);
+  const [answer, { isLoading }] = useAnswerProfilePromptMutation();
+
+  if (dismissed) return null;
+
+  const submit = () => {
+    if (!value.trim()) return;
+    runMutation(answer, { field, value: value.trim() }, {
+      onSuccess: () => toast.success("Got it — saved to your Identity."),
+      errorMessage: "Couldn't save that",
+    });
+    setDismissed(true);
+  };
+
+  return (
+    <div className="mt-3 border-2 border-tx bg-surface-1 px-3 py-2.5">
+      <div className="flex items-start gap-2">
+        <MessageCircleQuestion className="mt-0.5 size-3.5 shrink-0 text-acc" />
+        <div className="min-w-0 flex-1">
+          <div className="text-[12.5px] font-[600] text-tx">{question}</div>
+          <div className="mt-2 flex gap-2">
+            <input
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && submit()}
+              placeholder="Type your answer…"
+              className="min-w-0 flex-1 border-2 border-tx bg-surface-2 px-2 py-1 text-[12.5px] outline-none focus:border-acc"
+            />
+            <button type="button" onClick={submit} disabled={isLoading || !value.trim()} className="ds-btn acc sm">
+              Save
+            </button>
+            <button type="button" onClick={() => setDismissed(true)} className="ds-btn ghost sm">
+              Not now
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const TYPE_ROUTE: Record<string, string> = {
   TASK: "/tasks",
@@ -166,7 +213,7 @@ export function WhatNowCard() {
   const caughtUp = data.primaryAction === null;
 
   return (
-    <div className="card raised card-pad" style={{ borderLeft: `5px solid ${accent}` }}>
+    <div id="what-now-card" className="card raised card-pad relative z-10" style={{ borderLeft: `5px solid ${accent}` }}>
       <div className="mb-3 flex items-center gap-2">
         <Brain className="size-5 text-acc" />
         <div className="font-display text-[18px] font-bold">What Now?</div>
@@ -271,6 +318,10 @@ export function WhatNowCard() {
             </div>
           ))}
         </div>
+      )}
+
+      {data.profilingPrompt && (
+        <ProfilingPrompt field={data.profilingPrompt.field} question={data.profilingPrompt.question} />
       )}
 
       {/* Behavior insight + weekly pattern */}
