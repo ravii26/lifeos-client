@@ -123,18 +123,18 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
         {isClassic ? (
           <>
             <div className="grid size-7 shrink-0 place-items-center rounded-lg bg-primary text-sm font-extrabold text-primary-foreground shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_4px_14px_var(--acc-glow)] transition-all duration-300 hover:scale-105">
-              L
+              A
             </div>
             {!collapsed && (
               <span className="text-base font-semibold tracking-tight animate-fade-in">
-                Life<span className="text-primary">OS</span>
+                Ally<span className="text-primary">.</span>
               </span>
             )}
           </>
         ) : (
           <span className="font-display text-[19px] font-[850] tracking-tight text-tx transition-all duration-300">
             {collapsed ? (
-              <span className="text-acc">L.</span>
+              <span className="text-acc">A.</span>
             ) : (
               <span className="animate-fade-in">
                 Ally<span className="text-acc">.</span>
