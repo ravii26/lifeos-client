@@ -175,7 +175,7 @@ export function OnboardingIntake() {
           Tell me what's going on, and I'll build your starter setup
         </h2>
         <p className="mb-3 max-w-[560px] text-[13px] text-tx-3">
-          LifeOS works off Areas, Goals, Habits, and Tasks — instead of filling those in one at a
+          Ally works off Areas, Goals, Habits, and Tasks — instead of filling those in one at a
           time, just describe your life and what you want to work on. I'll propose a starter set
           you can edit or reject before anything's created.
         </p>

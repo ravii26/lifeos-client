@@ -14,7 +14,7 @@ export function AuthShell({ title, subtitle, children, footer }: AuthShellProps)
       <div className="w-full max-w-sm">
         <div className="mb-6">
           <span className="font-display text-[26px] font-[850] tracking-tight">
-            LifeOS<span className="text-acc">.</span>
+            Ally<span className="text-acc">.</span>
           </span>
         </div>
 

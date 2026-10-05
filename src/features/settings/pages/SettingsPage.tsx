@@ -79,7 +79,7 @@ export function SettingsPage() {
       <div className="page-head">
         <div className="eyebrow">Preferences</div>
         <h1 className="page-title">Settings</h1>
-        <div className="page-sub">Personalise your LifeOS experience.</div>
+        <div className="page-sub">Personalise your Ally experience.</div>
       </div>
 
       <div className="card card-pad flex flex-col gap-6 max-w-lg">

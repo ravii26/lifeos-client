@@ -42,7 +42,7 @@ export function Topbar({
 }) {
   const dispatch = useAppDispatch();
   const { pathname } = useLocation();
-  const title = TITLES[pathname] ?? "LifeOS";
+  const title = TITLES[pathname] ?? "Ally";
   const { data: settings } = useGetSettingsQuery();
   const [updateSettings] = useUpdateSettingsMutation();
   const user = useAppSelector(selectCurrentUser);

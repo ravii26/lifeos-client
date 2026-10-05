@@ -122,7 +122,7 @@ export function DashboardPage() {
             {greeting()}
             {firstName ? `, ${firstName}` : ""}
           </div>
-          <h1 className="h-display text-[29px] leading-tight">Welcome to LifeOS</h1>
+          <h1 className="h-display text-[29px] leading-tight">Welcome to Ally</h1>
         </div>
         <OnboardingIntake />
       </div>

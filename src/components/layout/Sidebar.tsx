@@ -137,7 +137,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
               <span className="text-acc">L.</span>
             ) : (
               <span className="animate-fade-in">
-                LifeOS<span className="text-acc">.</span>
+                Ally<span className="text-acc">.</span>
               </span>
             )}
           </span>

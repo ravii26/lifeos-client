@@ -44,7 +44,7 @@ export function RegisterPage() {
   return (
     <AuthShell
       title="Create account"
-      subtitle="Start building your LifeOS."
+      subtitle="Meet Ally, your personal assistant."
       footer={
         <>
           Already have an account?{" "}

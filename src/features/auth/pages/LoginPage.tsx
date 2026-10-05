@@ -44,7 +44,7 @@ export function LoginPage() {
   return (
     <AuthShell
       title="Log in"
-      subtitle="Welcome back to LifeOS."
+      subtitle="Welcome back to Ally."
       footer={
         <>
           No account?{" "}

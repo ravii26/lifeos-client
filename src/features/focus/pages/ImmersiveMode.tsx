@@ -102,7 +102,7 @@ export function ImmersiveMode() {
       <div className="relative flex items-center justify-between border-b-2 border-tx px-7 py-[18px]">
         <div className="flex items-center gap-2.5">
           <span className="font-display text-[17px] font-[850] tracking-tight text-tx">
-            LifeOS<span style={{ color: glowColor }}>.</span>
+            Ally<span style={{ color: glowColor }}>.</span>
           </span>
           <span className="font-display text-[15px] font-semibold text-tx-3">Immersive</span>
         </div>
