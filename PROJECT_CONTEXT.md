@@ -1,3 +1,5 @@
+> **⚠️ Superseded (2026-10-07):** this file describes old LifeOS and is outdated. Read `AGENTS.md` in this repo (and the workspace root `AGENTS.md`) instead.
+
 # LifeOS Client — Complete Project Context
 
 > **How to use this file:** Read the whole thing at the start of every session.
