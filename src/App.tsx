@@ -24,6 +24,7 @@ import { LibraryPage } from "@/features/library/pages/LibraryPage";
 import { RequireModule } from "@/features/settings/RequireModule";
 import { ImmersiveMode } from "@/features/focus/pages/ImmersiveMode";
 import { TasksPage } from "@/features/tasks/pages/TasksPage";
+import { AdminPage } from "@/features/admin/pages/AdminPage";
 
 function App() {
   return (
@@ -46,6 +47,7 @@ function App() {
               <Route path="/tasks" element={<TasksPage />} />
               <Route path="/dump" element={<DumpPage />} />
               <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/admin" element={<AdminPage />} />
 
               {/* Optional — gated by the user's enabled modules */}
               <Route element={<RequireModule module="goals" />}>

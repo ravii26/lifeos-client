@@ -4,6 +4,8 @@ export interface User {
   email: string;
   name: string;
   timezone?: string;
+  /** Set by GET /auth/me: can open the admin page (the API checks again). */
+  isAdmin?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }

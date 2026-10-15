@@ -7,6 +7,7 @@ import {
   ChevronLeft,
   ClipboardCheck,
   Flag,
+  Gauge,
   GraduationCap,
   Inbox,
   LayoutDashboard,
@@ -22,6 +23,8 @@ import { useListTasksQuery } from "@/features/tasks/tasksApi";
 import { useVibeConfig } from "@/features/settings/useVibe";
 import { useEnabledModules } from "@/features/settings/useEnabledModules";
 import { useUIMode } from "@/features/tweaks/uiMode";
+import { useAppSelector } from "@/store/hooks";
+import { selectCurrentUser } from "@/features/auth/authSlice";
 
 // `module` ties a nav item to a toggleable module; items without one (Dashboard,
 // Tasks, Areas, Dump, Settings) are core and always shown.
@@ -29,7 +32,8 @@ import { useUIMode } from "@/features/tweaks/uiMode";
 // index number IS the mark. A picture-icon-per-row nav is the single most
 // recognizable "generated dashboard" tell; a numbered index list reads like
 // a table of contents instead.
-type NavItem = { label: string; to: string; icon: LucideIcon; end?: boolean; module?: string };
+// `admin` items only show for admins (the API checks again).
+type NavItem = { label: string; to: string; icon: LucideIcon; end?: boolean; module?: string; admin?: boolean };
 type NavGroup = { title: string; items: NavItem[] };
 
 const NAV: NavGroup[] = [
@@ -58,6 +62,7 @@ const NAV: NavGroup[] = [
       { label: "Vault", to: "/vault", icon: Archive, module: "vault" },
       { label: "Dump", to: "/dump", icon: Inbox },
       { label: "Settings", to: "/settings", icon: Settings },
+      { label: "Admin", to: "/admin", icon: Gauge, admin: true },
     ],
   },
 ];
@@ -88,11 +93,12 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const { isEnabled } = useEnabledModules();
   const uiMode = useUIMode();
   const isClassic = uiMode === "classic";
+  const isAdmin = !!useAppSelector(selectCurrentUser)?.isAdmin;
 
   // Hide nav items whose module is disabled, then drop any group left empty.
   const groups = NAV.map((g) => ({
     ...g,
-    items: g.items.filter((item) => !item.module || isEnabled(item.module)),
+    items: g.items.filter((item) => (!item.module || isEnabled(item.module)) && (!item.admin || isAdmin)),
   })).filter((g) => g.items.length > 0);
   const openTasks = (tasks ?? []).filter(
     (t) => t.status === "TODO" || t.status === "IN_PROGRESS",
