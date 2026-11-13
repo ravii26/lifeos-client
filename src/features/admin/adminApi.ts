@@ -51,12 +51,29 @@ export interface AdminSave {
   createdAt: string;
 }
 
+export interface ReturnRate {
+  eligible: number;
+  returned: number;
+  rate: number | null;
+}
+
+/** What Ally is judged on: things finished or dropped on purpose, and people coming back. */
+export interface AdminProgress {
+  doneThisWeek: number;
+  droppedThisWeek: number;
+  activeThisWeek: number;
+  donePerActiveUser: number | null;
+  return7: ReturnRate;
+  return30: ReturnRate;
+}
+
 export interface AdminOverview {
   users: number;
   newUsers: number;
   activeThisWeek: number;
   upcomingReminders: number;
   savesThisWeek: number;
+  progress?: AdminProgress;
 }
 
 export const adminApi = api.injectEndpoints({

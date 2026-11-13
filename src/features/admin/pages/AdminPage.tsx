@@ -19,6 +19,7 @@ import {
 
 const inr = (n: number) => `₹${n < 10 ? n.toFixed(2) : Math.round(n).toLocaleString("en-IN")}`;
 const num = (n: number) => n.toLocaleString("en-IN");
+const pct = (r: number | null) => (r == null ? "—" : `${Math.round(r * 100)}%`);
 const tokens = (n: number) => (n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : n >= 1000 ? `${Math.round(n / 1000)}k` : String(n));
 const when = (iso: string) =>
   new Date(iso).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
@@ -132,6 +133,30 @@ export function AdminPage() {
       {summary.isError && (
         <p className="text-sm text-danger">Couldn't load the AI numbers. Is ADMIN_EMAILS set on the server?</p>
       )}
+
+      <Section title="Progress" note="what Ally is judged on · last 7 days">
+        {o?.progress ? (
+          <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-6">
+            <Stat num={num(o.progress.doneThisWeek)} label="Done" sub="incl. smallest versions" />
+            <Stat num={num(o.progress.droppedThisWeek)} label="Dropped on purpose" sub="let go or archived" />
+            <Stat
+              num={o.progress.donePerActiveUser == null ? "—" : String(o.progress.donePerActiveUser)}
+              label="Per active person"
+              sub={`${o.progress.activeThisWeek} active`}
+            />
+            <Stat num={pct(o.progress.return7.rate)} label="Back after day 7" sub={`${o.progress.return7.returned} of ${o.progress.return7.eligible}`} />
+            <Stat num={pct(o.progress.return30.rate)} label="Back after day 30" sub={`${o.progress.return30.returned} of ${o.progress.return30.eligible}`} />
+            <Stat
+              num={s && o.progress.activeThisWeek ? inr(s.last7Days.costInr / o.progress.activeThisWeek / 7) : "—"}
+              label="AI per active person / day"
+              sub="last 7 days"
+            />
+          </div>
+        ) : (
+          <p className="text-sm text-tx-3">Loading…</p>
+        )}
+        <p className="mt-4 text-xs text-tx-3">Missed reminders aren't tracked yet: the phone needs to report them (Phase 2).</p>
+      </Section>
 
       <Section title="AI cost" note={s ? `₹${s.usdInr} per $ · estimate from list prices` : undefined}>
         {s ? (
