@@ -15,14 +15,17 @@ export function safeDate(iso?: string): Date | null {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
+// The format helpers follow the browser's language unless a locale is given,
+// so "Jul 12" reads "12 Jul" for someone in India.
+
 /** "Jul 12" */
-export function formatShortDate(d: Date): string {
-  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+export function formatShortDate(d: Date, locale?: string): string {
+  return d.toLocaleDateString(locale, { month: "short", day: "numeric" });
 }
 
 /** "Jul 12, 2026" */
-export function formatDate(d: Date): string {
-  return d.toLocaleDateString(undefined, {
+export function formatDate(d: Date, locale?: string): string {
+  return d.toLocaleDateString(locale, {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -30,8 +33,8 @@ export function formatDate(d: Date): string {
 }
 
 /** "Sunday, Jul 12" */
-export function formatLongDate(d: Date): string {
-  return d.toLocaleDateString(undefined, {
+export function formatLongDate(d: Date, locale?: string): string {
+  return d.toLocaleDateString(locale, {
     weekday: "long",
     month: "short",
     day: "numeric",
@@ -39,8 +42,8 @@ export function formatLongDate(d: Date): string {
 }
 
 /** "Sun" */
-export function formatWeekdayShort(d: Date): string {
-  return d.toLocaleDateString(undefined, { weekday: "short" });
+export function formatWeekdayShort(d: Date, locale?: string): string {
+  return d.toLocaleDateString(locale, { weekday: "short" });
 }
 
 /** Relative time like "5m ago", "2d ago", or "now". Null for missing/invalid input. */

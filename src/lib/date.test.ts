@@ -36,25 +36,25 @@ describe("safeDate", () => {
 
 describe("formatShortDate", () => {
   it("formats month and day without a year", () => {
-    expect(formatShortDate(new Date(2026, 6, 9))).toBe("Jul 9");
+    expect(formatShortDate(new Date(2026, 6, 9), "en-US")).toBe("Jul 9");
   });
 });
 
 describe("formatDate", () => {
   it("formats month, day, and year", () => {
-    expect(formatDate(new Date(2026, 6, 9))).toBe("Jul 9, 2026");
+    expect(formatDate(new Date(2026, 6, 9), "en-US")).toBe("Jul 9, 2026");
   });
 });
 
 describe("formatLongDate", () => {
   it("includes the full weekday name", () => {
-    expect(formatLongDate(new Date(2026, 6, 9))).toBe("Thursday, Jul 9");
+    expect(formatLongDate(new Date(2026, 6, 9), "en-US")).toBe("Thursday, Jul 9");
   });
 });
 
 describe("formatWeekdayShort", () => {
   it("formats the abbreviated weekday", () => {
-    expect(formatWeekdayShort(new Date(2026, 6, 9))).toBe("Thu");
+    expect(formatWeekdayShort(new Date(2026, 6, 9), "en-US")).toBe("Thu");
   });
 });
 
